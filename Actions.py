@@ -1,5 +1,8 @@
 import pyautogui
 import pyperclip
+import time
+import random
+import keyboard
 
 
 def readInventory(client):
@@ -30,4 +33,60 @@ def login(client):  # Takes control of the mouse and keyboard to login to Runeli
     pyautogui.keyDown('ctrl')
     pyautogui.press('v')
     pyautogui.keyUp('ctrl')
-    print('Login complete.')
+    print('Logged in.')
+
+
+def autoAlch(client, string_var):
+    client.setFocus()
+    time.sleep(.5)
+    pyautogui.press('f4')
+    time.sleep(.5)
+    # Set Clicking Rectangle
+    firstCoords = [client.getX(.8751545117), client.getY(.3464419476)]
+    secondCoords = [client.getX(.8936959209), client.getY(.3164794007)]
+    clickrectangle = firstCoords + secondCoords
+    # Set Smelter
+    smelterPOS = [round(client.client_rectangle.left + (client.client_width * .8294190358)),
+                  round(client.client_rectangle.bottom - (client.client_height * .3689138577))]
+    print(str(smelterPOS))
+    smelterColor = pyautogui.pixel(smelterPOS[0], smelterPOS[1])
+    print(str(smelterPOS) + " Mouse position")
+    print(str(smelterColor) + " Pixel color")
+
+    string_var.set("Auto-Alching")
+    client.updateClient()
+    randominterval = 1
+    quitCounter = 0
+    pyautogui.press('f4')
+    newx = random.normalvariate(((clickrectangle[2] - clickrectangle[0]) / 2) + clickrectangle[0], 1.848448998)
+    newy = random.normalvariate(((clickrectangle[3] - clickrectangle[1]) / 2) + clickrectangle[1], 1.599684449)
+    pyautogui.moveTo(newx, newy, 1, pyautogui.easeOutQuad)
+    pyautogui.click(interval=randominterval)
+    pyautogui.press('f4')
+    print("Starting auto alch")
+    while True:
+        if keyboard.is_pressed('esc'):
+            break
+        if pyautogui.pixelMatchesColor(smelterPOS[0], smelterPOS[1], smelterColor, tolerance=2):
+            quitCounter = 0
+        elif (quitCounter > 10):
+            break
+        if (random.randrange(1, 6) == 1):
+            newx = random.normalvariate(((clickrectangle[2] - clickrectangle[0]) / 2) + clickrectangle[0], 1.848448998)
+            newy = random.normalvariate(((clickrectangle[3] - clickrectangle[1]) / 2) + clickrectangle[1], 1.599684449)
+            print("{} , {}".format(newx, newy))
+            # pyautogui.moveTo(random.randrange(clickrectangle[0], clickrectangle[2]),random.randrange(clickrectangle[1], clickrectangle[3]), 1, pyautogui.easeOutQuad)
+            pyautogui.moveTo(newx, newy, 1, pyautogui.easeOutQuad)
+            print("Adjusting click location.")
+        if (random.randrange(1, 10) == 1):
+            randominterval = random.uniform(0.8, 1.2)
+            print("Adjusting click interval.")
+
+        quitCounter = quitCounter + 1
+
+        pyautogui.click(interval=randominterval)
+        if pyautogui.pixelMatchesColor(smelterPOS[0], smelterPOS[1], smelterColor, tolerance=2):
+            quitCounter = 0
+
+    string_var.set("Auto-Alching stopped.")
+    #client.updateClient()

@@ -25,6 +25,12 @@ def runLogin(string_var, lock):  # Copies password from file and logs in to Rune
         login(client)
         string_var.set('Idle')
 
+
+def runAlch(string_var, lock):
+    with lock:
+        string_var.set('Setting up auto-alch.')
+        autoAlch(client, string_var)
+
 # --Threading locks
 status_lock = threading.Lock()
 inventory_lock = threading.Lock()
@@ -38,16 +44,19 @@ print(f'Thread initialized in main: {threading.get_ident()}')
 # gui.bind("<<StatusChange>>", printBonjour('no'))
 
 # --Widgets
-static_status_label = tk.Label(text='Status: ').grid(row=2, column=1)
-static_inventory_label = tk.Label(text='Current tab: ').grid(row=3, column=1)
+static_inventory_label = tk.Label(text='Current tab: ').grid(row=2, column=1)
+static_status_label = tk.Label(text='Status: ').grid(row=3, column=1)
 
-status_string = tk.StringVar()
-status_label = tk.Label(textvariable=status_string).grid(row=2, column=2)
 inventory_string = tk.StringVar()
-inventory_label = tk.Label(textvariable=inventory_string).grid(row=3, column=2)
+inventory_label = tk.Label(textvariable=inventory_string).grid(row=2, column=2)
+status_string = tk.StringVar()
+status_label = tk.Label(textvariable=status_string).grid(row=3, column=2)
 
-press_button = tk.Button(text='Login', command=lambda: createThread(runLogin, status_string, status_lock))
-press_button.grid(row=1, column=1)
+login_button = tk.Button(text='Login', command=lambda: createThread(runLogin, status_string, status_lock))
+login_button.grid(row=1, column=1)
+
+alch_button = tk.Button(text='Auto Alch', command=lambda: createThread(runAlch, status_string, status_lock))
+alch_button.grid(row=1, column=2)
 
 # Boot threads
 createThread(inventoryListener, inventory_string, inventory_lock)
