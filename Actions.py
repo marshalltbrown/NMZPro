@@ -2,6 +2,16 @@ import pyautogui
 import pyperclip
 
 
+def readInventory(client):
+    tab_selected_color = [117, 40, 30]
+    if pyautogui.pixelMatchesColor(client.getX(0.7849196538936959), client.getY(0.6254681647940075), tab_selected_color, tolerance=10):
+        return 'On items tab.'
+    elif pyautogui.pixelMatchesColor(client.getX(0.8714462299134734), client.getY(0.6254681647940075), tab_selected_color, tolerance=10):
+        return 'On prayer tab.'
+    else:
+        return 'On unknown tab.'
+
+
 def readPassword():  # Reads password from the password.txt then copies it to the clipboard.
     with open('password.txt', 'r') as reader:
         pyperclip.copy(reader.readline())
