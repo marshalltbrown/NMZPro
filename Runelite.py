@@ -8,7 +8,7 @@ class runelite:
         self.client_height = None
         self.client_rectangle = None
         self.updateClient()
-        print(f"Runelite window coordinates: {self.client_rectangle}")
+        print(f"Runelite instantiated with window coordinates: {self.client_rectangle}")
 
     def updateClient(self):
         self.client_rectangle = self.client.rectangle()
@@ -18,7 +18,6 @@ class runelite:
         else:
             self.client_width = self.client_rectangle.right - self.client_rectangle.left
         self.client_height = self.client_rectangle.bottom - self.client_rectangle.top
-        print("Client location updated.")
 
     def getX(self, formula):
         return round(self.client_rectangle.left + (self.client_width * formula))
