@@ -40,7 +40,7 @@ def runAlch(string_var, lock):
 
 
 def runNMZ(string_var, lock):
-    NMZ(client, gamestate, string_var)
+    NMZ(client, gamestate, string_var, lock)
     string_var.set('Idle.')
 
 
@@ -48,6 +48,7 @@ def runNMZ(string_var, lock):
 gamestate = {}
 gamestate['tab'] = 'Unknown'
 gamestate['health'] = 'Unknown'
+gamestate['eating'] = 'Pending'
 
 # --Threading locks
 status_lock = threading.Lock()
