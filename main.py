@@ -15,13 +15,14 @@ def inventoryListener(string_var, lock):
         with lock:
             client.updateClient()  # WARNING - IS UPDATING CLIENT EVERY SECOND
             string_var.set(readInventory(client, gamestate))
-        time.sleep(1)
+        time.sleep(.5)
 
 
 def healthListener(string_var, lock):
     while True:
         with lock:
             string_var.set(readHealth(client, gamestate))
+            time.sleep(.5)
 
 
 def runLogin(string_var, lock):  # Copies password from file and logs in to Runelite.

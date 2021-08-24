@@ -1,3 +1,5 @@
+import math
+
 import pyautogui
 import pyperclip
 import time
@@ -42,6 +44,18 @@ def NMZ(client, gamestate, string_var):
     if gamestate['tab'] != 'prayer':
         pyautogui.press('f3')
     NMZmoveToRapidHeal(newx, newy)
+    while True:
+        pyautogui.click()
+        time.sleep(random.normalvariate(.5, .15))
+        pyautogui.click()
+        sleep_duration = round(random.normalvariate(50, 5))
+        if random.randrange(1, 6) == 1:
+            newx = random.normalvariate(((client.getX(0.9060568603213844) - client.getX(0.8726823238566132)) / 2) + client.getX(0.8726823238566132), 5.247710123)
+            newy = random.normalvariate(((client.getY(0.4250936329588015) - client.getY(0.4737827715355805)) / 2) + client.getY(0.4737827715355805), 4.446260313)
+            NMZmoveToRapidHeal(newx, newy)
+        for timer in range(sleep_duration):
+            string_var.set(f"Waiting {timer}/{sleep_duration} seconds.")
+            time.sleep(1)
 
 
 def readPassword():  # Reads password from the password.txt then copies it to the clipboard.
