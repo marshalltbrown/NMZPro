@@ -22,7 +22,7 @@ def healthListener(string_var, lock):
     while True:
         with lock:
             string_var.set(readHealth(client, gamestate))
-            time.sleep(.5)
+        time.sleep(.5)
 
 
 def runLogin(string_var, lock):  # Copies password from file and logs in to Runelite.
@@ -40,7 +40,7 @@ def runAlch(string_var, lock):
 
 
 def runNMZ(string_var, lock):
-    NMZ(client, gamestate, string_var, lock)
+    NMZ(client, gamestate, string_var, health_string, lock, health_lock)
     string_var.set('Idle.')
 
 

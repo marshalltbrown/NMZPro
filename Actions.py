@@ -37,9 +37,9 @@ def NMZmoveToRapidHeal(x, y):
     pyautogui.moveTo(x, y, 1, pyautogui.easeOutQuad)
 
 
-def NMZ(client, gamestate, string_var, lock):
+def NMZ(client, gamestate, status_var, health_var, lock, health_lock):
     client.setFocus()
-    string_var.set('NMZ Started.')
+    status_var.set('NMZ Started.')
     newx = random.normalvariate(((client.getX(0.9060568603213844) - client.getX(0.8726823238566132)) / 2) + client.getX(0.8726823238566132), 5.247710123)
     newy = random.normalvariate(((client.getY(0.4250936329588015) - client.getY(0.4737827715355805)) / 2) + client.getY(0.4737827715355805), 4.446260313)
     with lock:
@@ -51,9 +51,10 @@ def NMZ(client, gamestate, string_var, lock):
             gamestate['eating'] = 'Eating'
             newx = random.normalvariate(((client.getX(0.9060568603213844) - client.getX(0.8726823238566132)) / 2) + client.getX(0.8726823238566132), 5.247710123)
             newy = random.normalvariate(((client.getY(0.4250936329588015) - client.getY(0.4737827715355805)) / 2) + client.getY(0.4737827715355805), 4.446260313)
-            threading.Thread(target=eatRockCake, args=(client, gamestate, string_var, lock,), daemon=True).start()
+            threading.Thread(target=eatRockCake, args=(client, gamestate, health_var, lock, health_lock,), daemon=True).start()
         with lock:
             client.setFocus()
+            status_var.set("Flicking Rapid Heal now.")
             NMZmoveToRapidHeal(newx, newy)
             if random.randrange(1, 4) == 1:
                 newx = random.normalvariate(((client.getX(0.9060568603213844) - client.getX(0.8726823238566132)) / 2) + client.getX(0.8726823238566132), 5.247710123)
@@ -69,28 +70,33 @@ def NMZ(client, gamestate, string_var, lock):
                 NMZmoveToRapidHeal(newx, newy)
         sleep_duration = round(random.normalvariate(56, 5))
         for timer in range(sleep_duration):
-            string_var.set(f"Waiting {timer}/{sleep_duration} seconds.")
+            status_var.set(f"{timer}/{sleep_duration - 1} Waiting to flick Rapid Heal.")
             time.sleep(1)
 
 
-def eatRockCake(client, gamestate, string_var, lock):
+def eatRockCake(client, gamestate, health_var, lock, health_lock):
     newx = random.normalvariate(((client.getX(0.7342398022249691) - client.getX(0.7058096415327565)) / 2) + client.getX(0.7058096415327565),3.947710123)
     newy = random.normalvariate(((client.getY(0.5) - client.getY(0.5430711610486891)) / 2) + client.getY(0.5430711610486891),3.146260313)
     print(f"newx: {newx}\nnewy: {newy}")
-    time.sleep(random.normalvariate(30, 5))
-    with lock:
-        client.setFocus()
-        pyautogui.press('f2')
-        time.sleep(random.normalvariate(.8, .1))
-        pyautogui.moveTo(newx, newy, (random.normalvariate(.6, .06)), pyautogui.easeOutQuad)
-        pyautogui.rightClick()
-        time.sleep(random.normalvariate(.7, .1))
-        newx = newx + random.normalvariate(0, 2.5)
-        newy = newy + random.normalvariate(45, .1)
-        pyautogui.moveTo(newx, newy, (random.normalvariate(.4, .012)), pyautogui.easeOutQuad)
-        time.sleep(random.normalvariate(.6, .221))
-        pyautogui.click()
-        gamestate['eating'] = 'Pending'
+    with health_lock:
+        sleep_duration = round(random.normalvariate(30, 5))
+        for timer in range(sleep_duration):
+            health_var.set(f"{timer}/{sleep_duration} Waiting to guzzle rock cake.")
+            time.sleep(1)
+        health_var.set("Guzzling rock cake now.")
+        with lock:
+            client.setFocus()
+            pyautogui.press('f2')
+            time.sleep(random.normalvariate(.8, .1))
+            pyautogui.moveTo(newx, newy, (random.normalvariate(.6, .06)), pyautogui.easeOutQuad)
+            pyautogui.rightClick()
+            time.sleep(random.normalvariate(.7, .1))
+            newx = newx + random.normalvariate(0, 2.5)
+            newy = newy + random.normalvariate(45, .1)
+            pyautogui.moveTo(newx, newy, (random.normalvariate(.4, .012)), pyautogui.easeOutQuad)
+            time.sleep(random.normalvariate(.6, .221))
+            pyautogui.click()
+            gamestate['eating'] = 'Pending'
 
 
 def readPassword():  # Reads password from the password.txt then copies it to the clipboard.
