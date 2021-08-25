@@ -1,6 +1,7 @@
 import threading
 import time
 import tkinter as tk
+from tkinter import *
 from Actions import *
 from Runelite import runelite
 
@@ -14,8 +15,8 @@ def inventoryListener(string_var, lock):
     while True:
         with lock:
             client.updateClient()  # WARNING - IS UPDATING CLIENT EVERY SECOND
-            string_var.set(readInventory(client, gamestate))
-        time.sleep(.5)
+            readInventory(client, gamestate, string_var, inventory_table)
+        time.sleep(10)
 
 
 def healthListener(string_var, lock):
@@ -64,21 +65,39 @@ print(f'Thread initialized in main: {threading.get_ident()}')
 # gui.bind("<<StatusChange>>", printBonjour('no'))
 
 # --Widgets
-static_inventory_label = tk.Label(text='Current tab: ').grid(row=2, column=1)
-static_health_label = tk.Label(text='Health: ').grid(row=3, column=1)
-static_status_label = tk.Label(text='Status: ').grid(row=4, column=1)
+static_health_label = tk.Label(text='Health: ').grid(row=2, column=1)
+static_status_label = tk.Label(text='Status: ').grid(row=3, column=1)
+static_inventory_label = tk.Label(text='Current tab: ').grid(row=4, column=1)
 
-inventory_string = tk.StringVar()
-inventory_label = tk.Label(textvariable=inventory_string).grid(row=2, column=2)
 health_string = tk.StringVar()
-health_label = tk.Label(textvariable=health_string).grid(row=3, column=2)
+health_label = tk.Label(textvariable=health_string).grid(row=2, column=2)
 status_string = tk.StringVar()
-status_label = tk.Label(textvariable=status_string).grid(row=4, column=2)
+status_label = tk.Label(textvariable=status_string).grid(row=3, column=2)
+inventory_string = tk.StringVar()
+inventory_label = tk.Label(textvariable=inventory_string).grid(row=4, column=2, pady=20)
+
+inventory_table = [{}, {}, {}, {}]
+for x in range(4):
+    for y in range(7):
+        inventory_table[x][y] = tk.StringVar()
+        inventory_table[x][y].set('?')
+        l = Label(textvariable=inventory_table[x][y], relief=RIDGE)
+        if x == 0:
+            l.grid(row=y+5, column=x, sticky=NSEW, padx=(45, 0))
+        else:
+            l.grid(row=y+5, column=x, sticky=NSEW)
+
+
+# print(f"My data: {str(inventory_table[0])}")
+# print(f"My data: {str(inventory_table[1])}")
+# print(f"My data: {str(inventory_table[2])}")
+# print(f"My data: {str(inventory_table[3])}")
+
 
 login_button = tk.Button(text='Login', command=lambda: createThread(runLogin, status_string, status_lock))
 login_button.grid(row=1, column=1)
 
-alch_button = tk.Button(text='Auto Alch', command=lambda: createThread(runAlch, status_string, status_lock))
+alch_button = tk.Button(text='Alch', command=lambda: createThread(runAlch, status_string, status_lock))
 alch_button.grid(row=1, column=2)
 
 nmz_button = tk.Button(text='NMZ', command=lambda: createThread(runNMZ, status_string, status_lock))

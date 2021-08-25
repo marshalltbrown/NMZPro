@@ -8,17 +8,41 @@ import random
 import keyboard
 
 
-def readInventory(client, gamestate):
+def readInventory(client, gamestate, status_var, inventory_table):
     tab_selected_color = [117, 40, 30]
     if pyautogui.pixelMatchesColor(client.getX(0.7849196538936959), client.getY(0.6254681647940075), tab_selected_color, tolerance=10):
         gamestate['tab'] = 'items'
-        return 'On items tab.'
+        status_var.set('On items tab.')
     elif pyautogui.pixelMatchesColor(client.getX(0.8714462299134734), client.getY(0.6254681647940075), tab_selected_color, tolerance=10):
         gamestate['tab'] = 'prayer'
-        return 'On prayer tab.'
+        status_var.set('On prayer tab.')
     else:
         gamestate['tab'] = 'unknown'
-        return 'On unknown tab.'
+        status_var.set('On unknown tab.')
+
+    one_dose = round(client.getY(.5))
+    two_dose = one_dose - 7
+    three_dose = two_dose - 3
+    four_dose = three_dose - 2
+
+    for y in range(7):
+        myX = client.getX(0.7194066749072929)
+        for x in range(4):
+            if getColors(myX, four_dose):
+                inventory_table[x][y].set('4')
+            elif getColors(myX, three_dose):
+                inventory_table[x][y].set('3')
+            elif getColors(myX, two_dose):
+                inventory_table[x][y].set('2')
+            elif getColors(myX, one_dose):
+                inventory_table[x][y].set('1')
+            else:
+                inventory_table[x][y].set('  -  ')
+            myX = myX + 42
+        four_dose += 36
+        three_dose += 36
+        two_dose += 36
+        one_dose += 36
 
 
 def readHealth(client, gamestate):
@@ -31,6 +55,15 @@ def readHealth(client, gamestate):
     else:
         gamestate['health'] = 'Unknown'
         return '? hp'
+
+
+def getColors(X, Y):
+    #print(f"--------Color at click: {str(pyautogui.pixel(X, Y))}")
+    range_color = [35, 149, 195]
+    if pyautogui.pixelMatchesColor(X, Y, range_color, tolerance=40):
+        return True
+    else:
+        return False
 
 
 def NMZmoveToRapidHeal(x, y):
