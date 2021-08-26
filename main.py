@@ -15,14 +15,14 @@ def inventoryListener(string_var, lock):
     while True:
         with lock:
             client.updateClient()  # WARNING - IS UPDATING CLIENT EVERY SECOND
-            readInventory(client, gamestate, string_var, inventory_table)
+            readInventory(client, string_var, inventory_table)
         time.sleep(10)
 
 
 def healthListener(string_var, lock):
     while True:
         with lock:
-            string_var.set(readHealth(client, gamestate))
+            string_var.set(readHealth(client))
         time.sleep(.5)
 
 
@@ -41,15 +41,9 @@ def runAlch(string_var, lock):
 
 
 def runNMZ(string_var, lock):
-    NMZ(client, gamestate, string_var, health_string, lock, health_lock)
+    NMZ(client, string_var, health_string, lock, health_lock)
     string_var.set('Idle.')
 
-
-# --Variables
-gamestate = {}
-gamestate['tab'] = 'Unknown'
-gamestate['health'] = 'Unknown'
-gamestate['eating'] = 'Pending'
 
 # --Threading locks
 status_lock = threading.Lock()

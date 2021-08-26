@@ -1,6 +1,4 @@
-import math
 import threading
-
 import pyautogui
 import pyperclip
 import time
@@ -8,16 +6,16 @@ import random
 import keyboard
 
 
-def readInventory(client, gamestate, status_var, inventory_table):
+def readInventory(client, status_var, inventory_table):
     tab_selected_color = [117, 40, 30]
     if pyautogui.pixelMatchesColor(client.getX(0.7849196538936959), client.getY(0.6254681647940075), tab_selected_color, tolerance=10):
-        gamestate['tab'] = 'items'
+        client.tab = 'Items'
         status_var.set('On items tab.')
     elif pyautogui.pixelMatchesColor(client.getX(0.8714462299134734), client.getY(0.6254681647940075), tab_selected_color, tolerance=10):
-        gamestate['tab'] = 'prayer'
+        client.tab = 'Prayer'
         status_var.set('On prayer tab.')
     else:
-        gamestate['tab'] = 'unknown'
+        client.tab = 'Unknown'
         status_var.set('On unknown tab.')
 
     one_dose = round(client.getY(.5))
@@ -45,15 +43,15 @@ def readInventory(client, gamestate, status_var, inventory_table):
         one_dose += 36
 
 
-def readHealth(client, gamestate):
+def readHealth(client):
     health_color = [255, 6, 0]
     if pyautogui.pixelMatchesColor(client.getX(0.6613102595797281), client.getY(0.8408239700374532), health_color, tolerance=10)\
             and pyautogui.pixelMatchesColor(client.getX(0.6613102595797281), client.getY(0.8277153558052435), health_color, tolerance=10)\
             and not pyautogui.pixelMatchesColor(client.getX(0.6588380716934487), client.getY(0.8389513108614233), health_color, tolerance=10):
-        gamestate['health'] = '1'
+        client.health = '1'
         return '1 hp'
     else:
-        gamestate['health'] = 'Unknown'
+        client.health = 'Unknown'
         return '? hp'
 
 
@@ -70,21 +68,21 @@ def NMZmoveToRapidHeal(x, y):
     pyautogui.moveTo(x, y, 1, pyautogui.easeOutQuad)
 
 
-def NMZ(client, gamestate, status_var, health_var, lock, health_lock):
+def NMZ(client, status_var, health_var, lock, health_lock):
     client.setFocus()
     status_var.set('NMZ Started.')
     newx = random.normalvariate(((client.getX(0.9060568603213844) - client.getX(0.8726823238566132)) / 2) + client.getX(0.8726823238566132), 5.247710123)
     newy = random.normalvariate(((client.getY(0.4250936329588015) - client.getY(0.4737827715355805)) / 2) + client.getY(0.4737827715355805), 4.446260313)
     with lock:
-        if gamestate['tab'] != 'prayer':
+        if client.tab != 'prayer':
             pyautogui.press('f3')
         NMZmoveToRapidHeal(newx, newy)
     while True:
-        if gamestate['health'] != '1' and gamestate['eating'] == 'Pending':
-            gamestate['eating'] = 'Eating'
+        if client.health != '1' and client.eating == 'Pending':
+            client.eating = 'Eating'
             newx = random.normalvariate(((client.getX(0.9060568603213844) - client.getX(0.8726823238566132)) / 2) + client.getX(0.8726823238566132), 5.247710123)
             newy = random.normalvariate(((client.getY(0.4250936329588015) - client.getY(0.4737827715355805)) / 2) + client.getY(0.4737827715355805), 4.446260313)
-            threading.Thread(target=eatRockCake, args=(client, gamestate, health_var, lock, health_lock,), daemon=True).start()
+            threading.Thread(target=eatRockCake, args=(client, health_var, lock, health_lock,), daemon=True).start()
         with lock:
             client.setFocus()
             status_var.set("Flicking Rapid Heal now.")
@@ -92,7 +90,7 @@ def NMZ(client, gamestate, status_var, health_var, lock, health_lock):
             if random.randrange(1, 4) == 1:
                 newx = random.normalvariate(((client.getX(0.9060568603213844) - client.getX(0.8726823238566132)) / 2) + client.getX(0.8726823238566132), 5.247710123)
                 newy = random.normalvariate(((client.getY(0.4250936329588015) - client.getY(0.4737827715355805)) / 2) + client.getY(0.4737827715355805), 4.446260313)
-            if gamestate['tab'] != 'prayer':
+            if client.tab != 'prayer':
                 pyautogui.press('f3')
             pyautogui.click()
             time.sleep(random.normalvariate(.5, .15))
@@ -107,7 +105,7 @@ def NMZ(client, gamestate, status_var, health_var, lock, health_lock):
             time.sleep(1)
 
 
-def eatRockCake(client, gamestate, health_var, lock, health_lock):
+def eatRockCake(client, health_var, lock, health_lock):
     newx = random.normalvariate(((client.getX(0.7342398022249691) - client.getX(0.7058096415327565)) / 2) + client.getX(0.7058096415327565),3.947710123)
     newy = random.normalvariate(((client.getY(0.5) - client.getY(0.5430711610486891)) / 2) + client.getY(0.5430711610486891),3.146260313)
     print(f"newx: {newx}\nnewy: {newy}")
@@ -129,7 +127,7 @@ def eatRockCake(client, gamestate, health_var, lock, health_lock):
             pyautogui.moveTo(newx, newy, (random.normalvariate(.4, .012)), pyautogui.easeOutQuad)
             time.sleep(random.normalvariate(.6, .221))
             pyautogui.click()
-            gamestate['eating'] = 'Pending'
+            client.eating = 'Pending'
 
 
 def readPassword():  # Reads password from the password.txt then copies it to the clipboard.

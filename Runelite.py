@@ -7,6 +7,9 @@ class runelite:
         self.client_width = None
         self.client_height = None
         self.client_rectangle = None
+        self.tab = 'Unknown'
+        self.health = 'Unknown'
+        self.eating = 'Pending'
         self.updateClient()
         print(f"Runelite instantiated with window coordinates: {self.client_rectangle}")
 
