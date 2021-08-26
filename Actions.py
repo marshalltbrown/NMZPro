@@ -4,19 +4,84 @@ import pyperclip
 import time
 import random
 import keyboard
+import numpy as np
+import matplotlib.pyplot as plt
+from pynput.mouse import Button, Controller
 
 
-def readInventory(client, status_var, inventory_table):
+def generateMousePlot(client):
+    fig = plt.figure(figsize=[13, 13])
+    plt.axis('off')
+    currentx = pyautogui.position()[0]
+    currenty = pyautogui.position()[1]
+    destinationx = 900
+    destinationy = 1000
+    for y in np.linspace(currenty, destinationy, 1):
+        for x in np.linspace(currentx, destinationx, 1):
+            points = []
+            wind_mouse(currentx, currenty, destinationx, destinationy, move_mouse=lambda x, y: points.append([x, y]))
+    mouse = Controller()
+    print(len(points))
+    for i in points:
+        mouse.move(i[0] - mouse.position[0], i[1] - mouse.position[1])
+        time.sleep(1/len(points))
+
+
+def wind_mouse(start_x, start_y, dest_x, dest_y, G_0=9, W_0=3, M_0=15, D_0=12, move_mouse=lambda x,y: None):
+    sqrt3 = np.sqrt(3)
+    sqrt5 = np.sqrt(5)
+    '''
+    WindMouse algorithm. Calls the move_mouse kwarg with each new step.
+    Released under the terms of the GPLv3 license.
+    G_0 - magnitude of the gravitational fornce
+    W_0 - magnitude of the wind force fluctuations
+    M_0 - maximum step size (velocity clip threshold)
+    D_0 - distance where wind behavior changes from random to damped
+    '''
+    current_x,current_y = start_x,start_y
+    v_x = v_y = W_x = W_y = 0
+    while (dist:=np.hypot(dest_x-start_x,dest_y-start_y)) >= 1:
+        W_mag = min(W_0, dist)
+        if dist >= D_0:
+            W_x = W_x/sqrt3 + (2*np.random.random()-1)*W_mag/sqrt5
+            W_y = W_y/sqrt3 + (2*np.random.random()-1)*W_mag/sqrt5
+        else:
+            W_x /= sqrt3
+            W_y /= sqrt3
+            if M_0 < 3:
+                M_0 = np.random.random()*3 + 3
+            else:
+                M_0 /= sqrt5
+        v_x += W_x + G_0*(dest_x-start_x)/dist
+        v_y += W_y + G_0*(dest_y-start_y)/dist
+        v_mag = np.hypot(v_x, v_y)
+        if v_mag > M_0:
+            v_clip = M_0/2 + np.random.random()*M_0/2
+            v_x = (v_x/v_mag) * v_clip
+            v_y = (v_y/v_mag) * v_clip
+        start_x += v_x
+        start_y += v_y
+        move_x = int(np.round(start_x))
+        move_y = int(np.round(start_y))
+        if current_x != move_x or current_y != move_y:
+            #This should wait for the mouse polling interval
+            move_mouse(current_x := move_x, current_y := move_y)
+
+    return current_x, current_y
+
+
+
+def readInventory(client, string_dict, lock_dict, inventory_table):
     tab_selected_color = [117, 40, 30]
     if pyautogui.pixelMatchesColor(client.getX(0.7849196538936959), client.getY(0.6254681647940075), tab_selected_color, tolerance=10):
         client.tab = 'Items'
-        status_var.set('On items tab.')
+        string_dict['inventory'].set('On items tab.')
     elif pyautogui.pixelMatchesColor(client.getX(0.8714462299134734), client.getY(0.6254681647940075), tab_selected_color, tolerance=10):
         client.tab = 'Prayer'
-        status_var.set('On prayer tab.')
+        string_dict['inventory'].set('On prayer tab.')
     else:
         client.tab = 'Unknown'
-        status_var.set('On unknown tab.')
+        string_dict['inventory'].set('On unknown tab.')
 
     one_dose = round(client.getY(.5))
     two_dose = one_dose - 7
@@ -24,19 +89,19 @@ def readInventory(client, status_var, inventory_table):
     four_dose = three_dose - 2
 
     for y in range(7):
-        myX = client.getX(0.7194066749072929)
+        starting_x = client.getX(0.7194066749072929)
         for x in range(4):
-            if getColors(myX, four_dose):
+            if getColors(starting_x, four_dose):
                 inventory_table[x][y].set('4')
-            elif getColors(myX, three_dose):
+            elif getColors(starting_x, three_dose):
                 inventory_table[x][y].set('3')
-            elif getColors(myX, two_dose):
+            elif getColors(starting_x, two_dose):
                 inventory_table[x][y].set('2')
-            elif getColors(myX, one_dose):
+            elif getColors(starting_x, one_dose):
                 inventory_table[x][y].set('1')
             else:
                 inventory_table[x][y].set('  -  ')
-            myX = myX + 42
+            starting_x = starting_x + 42
         four_dose += 36
         three_dose += 36
         two_dose += 36
@@ -55,10 +120,10 @@ def readHealth(client):
         return '? hp'
 
 
-def getColors(X, Y):
+def getColors(x, y):
     #print(f"--------Color at click: {str(pyautogui.pixel(X, Y))}")
     range_color = [35, 149, 195]
-    if pyautogui.pixelMatchesColor(X, Y, range_color, tolerance=40):
+    if pyautogui.pixelMatchesColor(x, y, range_color, tolerance=40):
         return True
     else:
         return False
