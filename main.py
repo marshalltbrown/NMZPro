@@ -90,7 +90,7 @@ for x in range(4):
 #login_button = tk.Button(text='Login', command=lambda: createThread(runLogin, string_vars, locks))
 #login_button.grid(row=1, column=1)
 
-login_button = tk.Button(text='Login', command=lambda: generateMousePlot(client))
+login_button = tk.Button(text='Login', command=lambda: win32test())
 login_button.grid(row=1, column=1)
 
 alch_button = tk.Button(text='Alch', command=lambda: createThread(runAlch, string_vars, locks))

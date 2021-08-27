@@ -4,10 +4,18 @@ import pyperclip
 import time
 import random
 import keyboard
+import win32ui
 from windmouse import WindMouse
 
 from pynput.mouse import Controller
 
+
+def win32test():
+    window = win32ui.FindWindow(None, "Runelite")
+    for i in range(1000):
+        dc = window.GetWindowDC()
+        print(dc.GetPixel(200, 200))
+        dc.DeleteDC()
 
 def generateMousePlot(client):
 
@@ -45,6 +53,7 @@ def generateMousePlot(client):
 
 
 def readInventory(client, string_dict, lock_dict, inventory_table):
+
     tab_selected_color = [117, 40, 30]
     if pyautogui.pixelMatchesColor(client.getX(0.7849196538936959), client.getY(0.6254681647940075), tab_selected_color, tolerance=10):
         client.tab = 'Items'
