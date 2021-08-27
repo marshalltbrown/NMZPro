@@ -4,70 +4,43 @@ import pyperclip
 import time
 import random
 import keyboard
-import numpy as np
-import matplotlib.pyplot as plt
-from pynput.mouse import Button, Controller
+from windmouse import WindMouse
+
+from pynput.mouse import Controller
 
 
 def generateMousePlot(client):
-    fig = plt.figure(figsize=[13, 13])
-    plt.axis('off')
+
     currentx = pyautogui.position()[0]
     currenty = pyautogui.position()[1]
     destinationx = 900
     destinationy = 1000
-    for y in np.linspace(currenty, destinationy, 1):
-        for x in np.linspace(currentx, destinationx, 1):
-            points = []
-            wind_mouse(currentx, currenty, destinationx, destinationy, move_mouse=lambda x, y: points.append([x, y]))
+
+
+    settings = {
+        'startX': pyautogui.position()[0],
+        'startY': pyautogui.position()[1],
+        'endX': 696,
+        'endY': 150,
+        'gravity': 9,
+        'wind': 7,
+        'minWait': 2,
+        'maxWait': 3,
+        'maxStep': 15,
+        'targetArea': 9,
+        'mouseSpeed': 1  # no idea what to put here
+    }
+    myMouse = WindMouse(settings)
+    start = 0
+    end = 1 * .02
+    num_steps = 70
+    points = myMouse.GeneratePoints(settings)
+
+    #Move the mouse across the points
     mouse = Controller()
-    print(len(points))
-    for i in points:
-        mouse.move(i[0] - mouse.position[0], i[1] - mouse.position[1])
+    for i in range(len(points)):
+        mouse.move(points[i][0] - mouse.position[0], points[i][1] - mouse.position[1])
         time.sleep(1/len(points))
-
-
-def wind_mouse(start_x, start_y, dest_x, dest_y, G_0=9, W_0=3, M_0=15, D_0=12, move_mouse=lambda x,y: None):
-    sqrt3 = np.sqrt(3)
-    sqrt5 = np.sqrt(5)
-    '''
-    WindMouse algorithm. Calls the move_mouse kwarg with each new step.
-    Released under the terms of the GPLv3 license.
-    G_0 - magnitude of the gravitational fornce
-    W_0 - magnitude of the wind force fluctuations
-    M_0 - maximum step size (velocity clip threshold)
-    D_0 - distance where wind behavior changes from random to damped
-    '''
-    current_x,current_y = start_x,start_y
-    v_x = v_y = W_x = W_y = 0
-    while (dist:=np.hypot(dest_x-start_x,dest_y-start_y)) >= 1:
-        W_mag = min(W_0, dist)
-        if dist >= D_0:
-            W_x = W_x/sqrt3 + (2*np.random.random()-1)*W_mag/sqrt5
-            W_y = W_y/sqrt3 + (2*np.random.random()-1)*W_mag/sqrt5
-        else:
-            W_x /= sqrt3
-            W_y /= sqrt3
-            if M_0 < 3:
-                M_0 = np.random.random()*3 + 3
-            else:
-                M_0 /= sqrt5
-        v_x += W_x + G_0*(dest_x-start_x)/dist
-        v_y += W_y + G_0*(dest_y-start_y)/dist
-        v_mag = np.hypot(v_x, v_y)
-        if v_mag > M_0:
-            v_clip = M_0/2 + np.random.random()*M_0/2
-            v_x = (v_x/v_mag) * v_clip
-            v_y = (v_y/v_mag) * v_clip
-        start_x += v_x
-        start_y += v_y
-        move_x = int(np.round(start_x))
-        move_y = int(np.round(start_y))
-        if current_x != move_x or current_y != move_y:
-            #This should wait for the mouse polling interval
-            move_mouse(current_x := move_x, current_y := move_y)
-
-    return current_x, current_y
 
 
 
