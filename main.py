@@ -45,8 +45,6 @@ def runNMZ(string_dict, lock_dict):
     string_dict['status'].set('Idle.')
 
 
-
-
 # --GUI and main thread set-up.
 client = runelite()  # Object from Runelite.py class. Used for client location data.
 gui = tk.Tk()
@@ -90,7 +88,7 @@ for x in range(4):
 #login_button = tk.Button(text='Login', command=lambda: createThread(runLogin, string_vars, locks))
 #login_button.grid(row=1, column=1)
 
-login_button = tk.Button(text='Login', command=lambda: generateMousePlot(client))
+login_button = tk.Button(text='Login', command=lambda: createThread(runLogin, string_vars, locks))
 login_button.grid(row=1, column=1)
 
 alch_button = tk.Button(text='Alch', command=lambda: createThread(runAlch, string_vars, locks))
@@ -100,7 +98,7 @@ nmz_button = tk.Button(text='NMZ', command=lambda: createThread(runNMZ, string_v
 nmz_button.grid(row=1, column=3)
 
 # Boot threads
-#createThread(inventoryListener, string_vars, locks)
+createThread(inventoryListener, string_vars, locks)
 #createThread(healthListener, string_vars, locks)
 
 gui.mainloop()  # Accessible code above this point.

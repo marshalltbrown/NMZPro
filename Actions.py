@@ -1,76 +1,62 @@
 import threading
+from math import floor
 import pyautogui
 import pyperclip
 import time
 import random
 import keyboard
 import win32ui
+from vars import *
 from windmouse import WindMouse
-
 from pynput.mouse import Controller
 
 
-def win32test():
-    window = win32ui.FindWindow(None, "Runelite")
-    for i in range(1000):
-        dc = window.GetWindowDC()
-        print(dc.GetPixel(200, 200))
-        dc.DeleteDC()
+def win32test(coords):
+    print(coords)
+    x, y = coords
+    window = win32ui.FindWindow(None, "Runelite - BigMTB")
+    dc = window.GetWindowDC()
+    color = dc.GetPixel(x, y)
+    dc.DeleteDC()
+    return color
 
-def generateMousePlot(client):
-
-    currentx = pyautogui.position()[0]
-    currenty = pyautogui.position()[1]
-    destinationx = 900
-    destinationy = 1000
-
-
-    settings = {
-
-
-        'gravity': 9,
-        'wind': 7,
-        'minWait': 2,
-        'maxWait': 3,
-        'maxStep': 15,
-        'targetArea': 9,
-        'mouseSpeed': 1  # no idea what to put here
-    }
+def generateMousePlot(end_coords):
     myMouse = WindMouse(settings)
-    endX = 696
-    endY = 150
-    startX = pyautogui.position()[0]
-    startY = pyautogui.position()[1]
+    mouse = Controller()
+    endX, endY = end_coords
+    startX, startY = pyautogui.position()
+
     points = myMouse.GeneratePoints(startX, startY, endX, endY)
 
     #Move the mouse across the points
-    mouse = Controller()
+
     for i in range(len(points)):
         mouse.move(points[i][0] - mouse.position[0], points[i][1] - mouse.position[1])
         time.sleep(1/len(points))
 
 
-
 def readInventory(client, string_dict, lock_dict, inventory_table):
-
-    tab_selected_color = [117, 40, 30]
-    if pyautogui.pixelMatchesColor(client.getX(0.7849196538936959), client.getY(0.6254681647940075), tab_selected_color, tolerance=10):
+    current_color = win32test(coord_item_tab_check)
+    current_color2 = win32test(coord_prayer_tab_check)
+    if pixelMatchesColor(current_color, color_tab_selected, tolerance=10):
         client.tab = 'Items'
         string_dict['inventory'].set('On items tab.')
-    elif pyautogui.pixelMatchesColor(client.getX(0.8714462299134734), client.getY(0.6254681647940075), tab_selected_color, tolerance=10):
+
+    elif pixelMatchesColor(current_color2, color_tab_selected, tolerance=10):
         client.tab = 'Prayer'
         string_dict['inventory'].set('On prayer tab.')
     else:
         client.tab = 'Unknown'
         string_dict['inventory'].set('On unknown tab.')
 
-    one_dose = round(client.getY(.5))
+    one_dose = coord_inv_slot1_1[1]
     two_dose = one_dose - 7
     three_dose = two_dose - 3
     four_dose = three_dose - 2
-
+    starting_x = coord_inv_slot1_1[0]
+    print(f"x: {starting_x}, Y: {one_dose}")
     for y in range(7):
-        starting_x = client.getX(0.7194066749072929)
+        starting_x = starting_x + 42
         for x in range(4):
             if getColors(starting_x, four_dose):
                 inventory_table[x][y].set('4')
@@ -82,7 +68,7 @@ def readInventory(client, string_dict, lock_dict, inventory_table):
                 inventory_table[x][y].set('1')
             else:
                 inventory_table[x][y].set('  -  ')
-            starting_x = starting_x + 42
+
         four_dose += 36
         three_dose += 36
         two_dose += 36
@@ -103,11 +89,20 @@ def readHealth(client):
 
 def getColors(x, y):
     #print(f"--------Color at click: {str(pyautogui.pixel(X, Y))}")
-    range_color = [35, 149, 195]
-    if pyautogui.pixelMatchesColor(x, y, range_color, tolerance=40):
+    var = x, y
+    current_color = win32test(var)
+    if pixelMatchesColor(current_color, color_range_potion, tolerance=40):
         return True
     else:
         return False
+
+
+def expandToWin(client, coords):
+    x, y = coords
+    x += client.client_rectangle.left
+    y += client.client_rectangle.top
+    return x, y
+
 
 
 def NMZmoveToRapidHeal(x, y):
@@ -186,15 +181,40 @@ def login(client):  # Takes control of the mouse and keyboard to login to Runeli
     print('Beginning login script.')
     client.updateClient()
     client.setFocus()
-    existing_user_box_on_screen = [19, 20, 21]
-    if pyautogui.pixelMatchesColor(client.getX(0.48825710754017304), client.getY(0.4101123595505618), existing_user_box_on_screen, tolerance=10):
+    current_color = win32test(coord_login_box_check)
+    if pixelMatchesColor(current_color, color_user_box_is_present, tolerance=10):
         print("Clicking \"Existing user\" box.")
-        pyautogui.click(client.getX(0.48825710754017304), client.getY(0.4101123595505618), interval=1)
-    pyautogui.click(client.getX(.4326328801), client.getY(.4588014981), interval=1)
+        generateMousePlot(expandToWin(client, coord_login_box_check))
+        pyautogui.click()
+        time.sleep(random.normalvariate(.5, .1))
+    generateMousePlot(expandToWin(client, coord_login_entry))
+    pyautogui.click()
     pyautogui.keyDown('ctrl')
     pyautogui.press('v')
     pyautogui.keyUp('ctrl')
     print('Logged in.')
+
+
+def decimalColortoRGB(decimal):
+    r = floor(decimal / (256 * 256))
+    g = floor(decimal / 256) % 256
+    b = decimal % 256
+    return r, g, b
+
+
+def pixelMatchesColor(pix, expectedRGBColor, tolerance=0):
+    if type(pix) == int:
+        pix = decimalColortoRGB(pix)
+    if len(pix) == 3 or len(expectedRGBColor) == 3: #RGB mode
+        r, g, b = pix[:3]
+        exR, exG, exB = expectedRGBColor[:3]
+        return (abs(r - exR) <= tolerance) and (abs(g - exG) <= tolerance) and (abs(b - exB) <= tolerance)
+    elif len(pix) == 4 and len(expectedRGBColor) == 4: #RGBA mode
+        r, g, b, a = pix
+        exR, exG, exB, exA = expectedRGBColor
+        return (abs(r - exR) <= tolerance) and (abs(g - exG) <= tolerance) and (abs(b - exB) <= tolerance) and (abs(a - exA) <= tolerance)
+    else:
+        assert False, 'Color mode was expected to be length 3 (RGB) or 4 (RGBA), but pixel is length %s and expectedRGBColor is length %s' % (len(pix), len(expectedRGBColor))
 
 
 def autoAlch(client, string_var, lock):
@@ -232,14 +252,14 @@ def autoAlch(client, string_var, lock):
             quitCounter = 0
         elif (quitCounter > 10):
             break
-        if (random.randrange(1, 6) == 1):
+        if random.randrange(1, 6) == 1:
             newx = random.normalvariate(((clickrectangle[2] - clickrectangle[0]) / 2) + clickrectangle[0], 1.848448998)
             newy = random.normalvariate(((clickrectangle[3] - clickrectangle[1]) / 2) + clickrectangle[1], 1.599684449)
             print("{} , {}".format(newx, newy))
             # pyautogui.moveTo(random.randrange(clickrectangle[0], clickrectangle[2]),random.randrange(clickrectangle[1], clickrectangle[3]), 1, pyautogui.easeOutQuad)
             pyautogui.moveTo(newx, newy, 1, pyautogui.easeOutQuad)
             print("Adjusting click location.")
-        if (random.randrange(1, 10) == 1):
+        if random.randrange(1, 10) == 1:
             randominterval = random.uniform(0.8, 1.2)
             print("Adjusting click interval.")
 
