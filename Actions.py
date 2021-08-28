@@ -26,10 +26,8 @@ def generateMousePlot(client):
 
 
     settings = {
-        'startX': pyautogui.position()[0],
-        'startY': pyautogui.position()[1],
-        'endX': 696,
-        'endY': 150,
+
+
         'gravity': 9,
         'wind': 7,
         'minWait': 2,
@@ -39,10 +37,11 @@ def generateMousePlot(client):
         'mouseSpeed': 1  # no idea what to put here
     }
     myMouse = WindMouse(settings)
-    start = 0
-    end = 1 * .02
-    num_steps = 70
-    points = myMouse.GeneratePoints(settings)
+    endX = 696
+    endY = 150
+    startX = pyautogui.position()[0]
+    startY = pyautogui.position()[1]
+    points = myMouse.GeneratePoints(startX, startY, endX, endY)
 
     #Move the mouse across the points
     mouse = Controller()
