@@ -2,6 +2,10 @@ import random
 import math
 
 
+def Hypot(dx, dy):
+    return math.sqrt(dx * dx + dy * dy)
+
+
 class WindMouse:
 
     def __init__(self, settings):
@@ -40,7 +44,7 @@ class WindMouse:
         points = []
         currentWait = 0
 
-        dist = self.Hypot(endX - startX, endY - startY)
+        dist = Hypot(endX - startX, endY - startY)
 
         while dist > 1.0:
             self.wind = min(self.wind, dist)
@@ -63,10 +67,10 @@ class WindMouse:
             velocityX = velocityX + (self.gravity * (endX - startX)) / dist
             velocityY = velocityY + (self.gravity * (endY - startY)) / dist
 
-            if self.Hypot(velocityX, velocityY) > self.maxStep:
+            if Hypot(velocityX, velocityY) > self.maxStep:
                 randomDist = self.maxStep / 2.0 + math.floor(
                     (random.uniform(0.1, 1.0) * round(self.maxStep)) / 2)
-                veloMag = self.Hypot(velocityX, velocityY)
+                veloMag = Hypot(velocityX, velocityY)
                 velocityX = (velocityX / veloMag) * randomDist
                 velocityY = (velocityY / veloMag) * randomDist
 
@@ -74,11 +78,11 @@ class WindMouse:
             oldY = round(startY)
             startX += velocityX
             startY += velocityY
-            dist = self.Hypot(endX - startX, endY - startY)
+            dist = Hypot(endX - startX, endY - startY)
             newX = round(startX)
             newY = round(startY)
 
-            step = self.Hypot(startX - oldX, startY - oldY)
+            step = Hypot(startX - oldX, startY - oldY)
             wait = round(waitDiff * (step / self.maxStep) + self.minWait)
             currentWait += wait
 
@@ -92,6 +96,3 @@ class WindMouse:
             points.append([newX, newY, currentWait])
 
         return points
-
-    def Hypot(self, dx, dy):
-        return math.sqrt(dx * dx + dy * dy)
