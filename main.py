@@ -19,6 +19,11 @@ def inventoryListener(string_dict, lock_dict):
         time.sleep(.1)
 
 
+def goToRock(string_dict, lock_dict):
+    goToSpot(client, string_dict, lock_dict, inventory_table)
+
+
+
 def healthListener(string_dict, lock_dict):
     while True:
         with lock_dict['health']:

@@ -1,10 +1,16 @@
 import pyperclip
+import re
 import win32ui
 from vars import *
 from windmouse import WindMouse
 from pynput.mouse import Controller
 import time
 from math import floor
+from scipy.stats import truncnorm
+
+
+def getTruncatedNormal(mean=0, sd=1, low=0, upp=10):
+    return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd).rvs()
 
 
 def generateMousePlot(end_coords):
@@ -31,7 +37,11 @@ def decimalColortoRGB(decimal):
 
 def getColor(coords):
     x, y = coords
-    window = win32ui.FindWindow(None, "Runelite - BigMTB")
+    window_title = re.compile
+    try:
+        window = win32ui.FindWindow(None, "Runelite - BigMTB")
+    except:
+        window = win32ui.FindWindow(None, "Runelite")
     dc = window.GetWindowDC()
     color = 1, 1, 1
     try:

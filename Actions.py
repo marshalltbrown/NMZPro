@@ -5,6 +5,15 @@ import keyboard
 from utils import *
 
 
+
+def goToSpot(client, string_dict, lock_dict, inventory_table):
+    for row in range(7):
+        for column in range(4):
+            if inventory_table[row][column].get() != 'null':
+                generateMousePlot(client.table_inventory_rects[row][column].center)
+                time.sleep(3)
+
+
 def readInventory(client, string_dict, lock_dict, inventory_table):
     item_tab_color = getColor(coord_item_tab_check)
     prayer_tab_color = getColor(coord_prayer_tab_check)

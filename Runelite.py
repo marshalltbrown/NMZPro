@@ -16,6 +16,14 @@ class runelite:
         self.rect_rock_cake = None
         self.coord_login_entry = None
         self.coord_existing_user = None
+        self.rect_styles_tab = None
+        self.rect_levels_tab = None
+        self.rect_quest_tab = None
+        self.rect_inventory_tab = None
+        self.rect_gear_tab = None
+        self.rect_prayer_tab = None
+        self.rect_magic_tab = None
+        self.table_inventory_rects = [{}, {}, {}, {}, {}, {}, {}]
 
         self.update()
         print(f"Runelite instantiated with window coordinates: {self.rectangle}")
@@ -31,9 +39,11 @@ class runelite:
 
         self.rect_alch = rectangle(self.getAbsoluteCoord(708, 365), self.getAbsoluteCoord(723, 349))
         self.rect_rapid_heal = rectangle(self.getAbsoluteCoord(706, 307), self.getAbsoluteCoord(733, 281))
-        self.rect_rock_cake = rectangle(self.getAbsoluteCoord(571, 267), self.getAbsoluteCoord(594, 244))
+        self.rect_rock_cake = rectangle(self.getAbsoluteCoord(571, 244), self.getAbsoluteCoord(594, 267))
         self.coord_login_entry = self.getAbsoluteCoord(350, 289)
         self.coord_existing_user = self.getAbsoluteCoord(395, 315)
+        self.updateTabLocations()
+        self.updateInventoryLocations()
 
     def getX(self, formula):
         return round(self.rectangle.left + (self.client_width * formula))
@@ -50,6 +60,31 @@ class runelite:
         if self.client.exists():
             self.client.set_focus()
 
+    def updateInventoryLocations(self):
+        # 30 px wide then a 12px usable gap between boxes 42 total
+        top = 244
+        bottom = 267
+        for row in range(7):
+            left = 568
+            right = 597
+            for column in range(4):
+                self.table_inventory_rects[row][column] = rectangle(self.getAbsoluteCoord(left, top),
+                                                                    self.getAbsoluteCoord(right, bottom))
+                left += 42
+                right += 42
+            top += 36
+            bottom += 36
+
+    def updateTabLocations(self):
+        # Rects have a usable width of 35 px with a 2px border.
+        self.rect_styles_tab = rectangle(self.getAbsoluteCoord(527, 196), self.getAbsoluteCoord(562, 229))
+        self.rect_levels_tab = rectangle(self.getAbsoluteCoord(564, 196), self.getAbsoluteCoord(599, 229))
+        self.rect_quest_tab = rectangle(self.getAbsoluteCoord(601, 196), self.getAbsoluteCoord(634, 229))
+        self.rect_inventory_tab = rectangle(self.getAbsoluteCoord(638, 196), self.getAbsoluteCoord(673, 229))
+        self.rect_gear_tab = rectangle(self.getAbsoluteCoord(675, 196), self.getAbsoluteCoord(710, 229))
+        self.rect_prayer_tab = rectangle(self.getAbsoluteCoord(712, 196), self.getAbsoluteCoord(747, 229))
+        self.rect_magic_tab = rectangle(self.getAbsoluteCoord(749, 196), self.getAbsoluteCoord(784, 229))
+
 
 class rectangle:
     def __init__(self, top_left, bottom_right):
@@ -57,4 +92,5 @@ class rectangle:
         self.top = top_left[1]
         self.right = bottom_right[0]
         self.bottom = bottom_right[1]
+        self.center = (((self.left + self.right) / 2), ((self.top + self.bottom) / 2),)
 
