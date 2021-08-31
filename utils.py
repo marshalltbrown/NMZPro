@@ -13,16 +13,20 @@ from scipy.stats import truncnorm
 
 def getTRNV(mean, lower, upper):
     result = False
+    print(f"Mean: {mean}, Upper = {upper}, lower ={lower}")
     while result < lower or result > upper:
         result = random.normalvariate(mean, (upper-lower) / 4)
     return result
 
 
 def getTRNVCoord(rect):
+
     mean_x = (rect.right + rect.left) / 2
     mean_y = (rect.top + rect.bottom) / 2
     x = getTRNV(mean_x, rect.left, rect.right)
     y = getTRNV(mean_y, rect.top, rect.bottom)
+    print(f"myrect: {mean_x}, {mean_y}")
+    print(f"myrect: {x}, {y}")
     return x, y
 
 

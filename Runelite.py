@@ -37,8 +37,8 @@ class runelite:
             self.client_width = self.rectangle.right - self.rectangle.left
         self.client_height = self.rectangle.bottom - self.rectangle.top
 
-        self.rect_alch = rectangle(self.getAbsoluteCoord(708, 365), self.getAbsoluteCoord(723, 349))
-        self.rect_rapid_heal = rectangle(self.getAbsoluteCoord(706, 307), self.getAbsoluteCoord(733, 281))
+        self.rect_alch = rectangle(self.getAbsoluteCoord(708, 349), self.getAbsoluteCoord(723, 365))
+        self.rect_rapid_heal = rectangle(self.getAbsoluteCoord(706, 281), self.getAbsoluteCoord(733, 307))
         self.rect_rock_cake = rectangle(self.getAbsoluteCoord(571, 244), self.getAbsoluteCoord(594, 267))
         self.coord_login_entry = self.getAbsoluteCoord(350, 289)
         self.coord_existing_user = self.getAbsoluteCoord(395, 315)

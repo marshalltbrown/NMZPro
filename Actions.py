@@ -5,10 +5,10 @@ import keyboard
 from utils import *
 
 
-def goToSpot(client, string_dict, lock_dict, inventory_table):
+def goToSpot(client, string_dict, lock_dict, inventory_table, item):
     for row in range(7):
         for column in range(4):
-            if inventory_table[row][column].get() == '(*)':
+            if inventory_table[row][column].get() == item:
                 generateMousePlot(getTRNVCoord(client.table_inventory_rects[row][column]))
 
 
@@ -74,65 +74,60 @@ def readHealth(client):
         return '? hp'
 
 
-def NMZ(client, status_var, health_var, lock, health_lock):
+def NMZ(client, string_dict, lock_dict, inventory_table):
     client.setFocus()
-    status_var.set('NMZ Started.')
-    newx = random.normalvariate(((client.getX(0.9060568603213844) - client.getX(0.8726823238566132)) / 2) + client.getX(0.8726823238566132), 5.247710123)
-    newy = random.normalvariate(((client.getY(0.4250936329588015) - client.getY(0.4737827715355805)) / 2) + client.getY(0.4737827715355805), 4.446260313)
-    with lock:
+    with lock_dict['status']:
+        string_dict['status'].set('NMZ Started.')
+        coords = getTRNVCoord(client.rect_rapid_heal)
+        print(f"Moving too coords: {coords}")
         if client.tab != 'prayer':
             pyautogui.press('f3')
-        generateMousePlot((newx, newy,))
+        generateMousePlot(coords)
     while True:
         if client.health != '1' and client.eating == 'Pending':
             client.eating = 'Eating'
-            newx = random.normalvariate(((client.getX(0.9060568603213844) - client.getX(0.8726823238566132)) / 2) + client.getX(0.8726823238566132), 5.247710123)
-            newy = random.normalvariate(((client.getY(0.4250936329588015) - client.getY(0.4737827715355805)) / 2) + client.getY(0.4737827715355805), 4.446260313)
-            threading.Thread(target=eatRockCake, args=(client, health_var, lock, health_lock,), daemon=True).start()
-        with lock:
+            coords = getTRNVCoord(client.rect_rapid_heal)
+            threading.Thread(target=eatRockCake, args=(client, string_dict, lock_dict, inventory_table), daemon=True).start()
+        with lock_dict['status']:
             client.setFocus()
-            status_var.set("Flicking Rapid Heal now.")
-            generateMousePlot((newx, newy,))
+            string_dict['status'].set("Flicking Rapid Heal now.")
+            generateMousePlot(coords)
             if random.randrange(1, 4) == 1:
-                newx = random.normalvariate(((client.getX(0.9060568603213844) - client.getX(0.8726823238566132)) / 2) + client.getX(0.8726823238566132), 5.247710123)
-                newy = random.normalvariate(((client.getY(0.4250936329588015) - client.getY(0.4737827715355805)) / 2) + client.getY(0.4737827715355805), 4.446260313)
+                coords = getTRNVCoord(client.rect_rapid_heal)
             if client.tab != 'prayer':
                 pyautogui.press('f3')
             pyautogui.click()
             time.sleep(random.normalvariate(.5, .15))
             pyautogui.click()
             if random.randrange(1, 6) == 1:
-                newx = random.normalvariate(((client.getX(0.9060568603213844) - client.getX(0.8726823238566132)) / 2) + client.getX(0.8726823238566132), 5.247710123)
-                newy = random.normalvariate(((client.getY(0.4250936329588015) - client.getY(0.4737827715355805)) / 2) + client.getY(0.4737827715355805), 4.446260313)
-                generateMousePlot((newx, newy,))
-        sleep_duration = round(random.normalvariate(56, 5))
+                coords = getTRNVCoord(client.rect_rapid_heal)
+                generateMousePlot(coords)
+        sleep_duration = round(getTRNV(57, 40, 66))
         for timer in range(sleep_duration):
-            status_var.set(f"{timer}/{sleep_duration - 1} Waiting to flick Rapid Heal.")
+            string_dict['status'].set(f"{timer}/{sleep_duration - 1} Waiting to flick Rapid Heal.")
             time.sleep(1)
 
 
-def eatRockCake(client, health_var, lock, health_lock):
-    newx = random.normalvariate(((client.getX(0.7342398022249691) - client.getX(0.7058096415327565)) / 2) + client.getX(0.7058096415327565),3.947710123)
-    newy = random.normalvariate(((client.getY(0.5) - client.getY(0.5430711610486891)) / 2) + client.getY(0.5430711610486891),3.146260313)
-    print(f"newx: {newx}\nnewy: {newy}")
-    with health_lock:
+def eatRockCake(client, string_dict, lock_dict, inventory_table):
+    with lock_dict['health']:
         sleep_duration = round(random.normalvariate(30, 5))
         for timer in range(sleep_duration):
-            health_var.set(f"{timer}/{sleep_duration} Waiting to guzzle rock cake.")
+            string_dict['health'].set(f"{timer}/{sleep_duration} Waiting to guzzle rock cake.")
             time.sleep(1)
-        health_var.set("Guzzling rock cake now.")
-        with lock:
+        string_dict['health'].set("Guzzling rock cake now.")
+        with lock_dict['status']:
             client.setFocus()
             pyautogui.press('f2')
-            time.sleep(random.normalvariate(.8, .1))
-            pyautogui.moveTo(newx, newy, (random.normalvariate(.6, .06)), pyautogui.easeOutQuad)
+            time.sleep(getTRNV(.8, .5, 1.2))
+            goToSpot(client, string_dict, lock_dict, inventory_table, '(*)')
+            time.sleep(getTRNV(.2, .1, .3))
             pyautogui.rightClick()
-            time.sleep(random.normalvariate(.7, .1))
-            newx = newx + random.normalvariate(0, 2.5)
-            newy = newy + random.normalvariate(45, .1)
-            pyautogui.moveTo(newx, newy, (random.normalvariate(.4, .012)), pyautogui.easeOutQuad)
-            time.sleep(random.normalvariate(.6, .221))
-            pyautogui.click()
+            time.sleep(getTRNV(.4, .2, .6))
+            #newx = newx + random.normalvariate(0, 2.5)
+            #newy = newy + random.normalvariate(45, .1)
+            #pyautogui.moveTo(newx, newy, (random.normalvariate(.4, .012)), pyautogui.easeOutQuad)
+            #time.sleep(random.normalvariate(.6, .221))
+            #pyautogui.click()
             client.eating = 'Pending'
 
 
