@@ -1,3 +1,5 @@
+import random
+
 import pyperclip
 import re
 import win32ui
@@ -7,6 +9,21 @@ from pynput.mouse import Controller
 import time
 from math import floor
 from scipy.stats import truncnorm
+
+
+def getTRNV(mean, lower, upper):
+    result = False
+    while result < lower or result > upper:
+        result = random.normalvariate(mean, (upper-lower) / 4)
+    return result
+
+
+def getTRNVCoord(rect):
+    mean_x = (rect.right + rect.left) / 2
+    mean_y = (rect.top + rect.bottom) / 2
+    x = getTRNV(mean_x, rect.lower, rect.right)
+    y = getTRNV(mean_y, rect.top, rect.bottom)
+    return x, y
 
 
 def getTruncatedNormal(mean=0, sd=1, low=0, upp=10):
