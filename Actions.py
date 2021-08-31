@@ -5,13 +5,11 @@ import keyboard
 from utils import *
 
 
-
 def goToSpot(client, string_dict, lock_dict, inventory_table):
     for row in range(7):
         for column in range(4):
-            if inventory_table[row][column].get() != 'null':
-                generateMousePlot(client.table_inventory_rects[row][column].center)
-                time.sleep(3)
+            if inventory_table[row][column].get() == '(*)':
+                generateMousePlot(getTRNVCoord(client.table_inventory_rects[row][column]))
 
 
 def readInventory(client, string_dict, lock_dict, inventory_table):
@@ -148,8 +146,9 @@ def login(client):  # Takes control of the mouse and keyboard to login to Runeli
         print("Clicking \"Existing user\" box.")
         generateMousePlot(client.coord_existing_user)
         pyautogui.click()
-        time.sleep(random.normalvariate(.5, .1))
+        time.sleep(getTRNV(1, .6, 1.2))
     generateMousePlot(client.coord_login_entry)
+    time.sleep(getTRNV(.2, .1, .3))
     pyautogui.click()
     pyautogui.keyDown('ctrl')
     pyautogui.press('v')

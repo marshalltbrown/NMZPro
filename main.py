@@ -23,7 +23,6 @@ def goToRock(string_dict, lock_dict):
     goToSpot(client, string_dict, lock_dict, inventory_table)
 
 
-
 def healthListener(string_dict, lock_dict):
     while True:
         with lock_dict['health']:
@@ -92,7 +91,7 @@ for row in range(7):
 #login_button = tk.Button(text='Login', command=lambda: createThread(runLogin, string_vars, locks))
 #login_button.grid(row=1, column=1)
 
-login_button = tk.Button(text='Login', command=lambda: createThread(runLogin, string_vars, locks))
+login_button = tk.Button(text='Login', command=lambda: createThread(goToRock, string_vars, locks))
 login_button.grid(row=1, column=1)
 
 alch_button = tk.Button(text='Alch', command=lambda: createThread(runAlch, string_vars, locks))

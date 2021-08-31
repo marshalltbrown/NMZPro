@@ -21,13 +21,9 @@ def getTRNV(mean, lower, upper):
 def getTRNVCoord(rect):
     mean_x = (rect.right + rect.left) / 2
     mean_y = (rect.top + rect.bottom) / 2
-    x = getTRNV(mean_x, rect.lower, rect.right)
+    x = getTRNV(mean_x, rect.left, rect.right)
     y = getTRNV(mean_y, rect.top, rect.bottom)
     return x, y
-
-
-def getTruncatedNormal(mean=0, sd=1, low=0, upp=10):
-    return truncnorm((low - mean) / sd, (upp - mean) / sd, loc=mean, scale=sd).rvs()
 
 
 def generateMousePlot(end_coords):
