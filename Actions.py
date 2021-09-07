@@ -1,100 +1,60 @@
 import threading
 import pyautogui
-import pyperclip
-import time
-import random
 import keyboard
-import win32ui
-from windmouse import WindMouse
-
-from pynput.mouse import Controller
+import random
+from utils import *
 
 
-def win32test():
-    window = win32ui.FindWindow(None, "Runelite")
-    for i in range(1000):
-        dc = window.GetWindowDC()
-        print(dc.GetPixel(200, 200))
-        dc.DeleteDC()
-
-def generateMousePlot(client):
-
-    currentx = pyautogui.position()[0]
-    currenty = pyautogui.position()[1]
-    destinationx = 900
-    destinationy = 1000
-
-
-    settings = {
-        'startX': pyautogui.position()[0],
-        'startY': pyautogui.position()[1],
-        'endX': 696,
-        'endY': 150,
-        'gravity': 9,
-        'wind': 7,
-        'minWait': 2,
-        'maxWait': 3,
-        'maxStep': 15,
-        'targetArea': 9,
-        'mouseSpeed': 1  # no idea what to put here
-    }
-    myMouse = WindMouse(settings)
-    start = 0
-    end = 1 * .02
-    num_steps = 70
-    points = myMouse.GeneratePoints(settings)
-
-    #Move the mouse across the points
-    mouse = Controller()
-    for i in range(len(points)):
-        mouse.move(points[i][0] - mouse.position[0], points[i][1] - mouse.position[1])
-        time.sleep(1/len(points))
-
+def goToInventorySpot(client, string_dict, lock_dict, inventory_table, item):
+    for row in range(7):
+        for column in range(4):
+            if inventory_table[row][column].get() == item:
+                moveMouse(getTRNVCoord(client.table_inventory_rects[row][column]))
 
 
 def readInventory(client, string_dict, lock_dict, inventory_table):
-
-    tab_selected_color = [117, 40, 30]
-    if pyautogui.pixelMatchesColor(client.getX(0.7849196538936959), client.getY(0.6254681647940075), tab_selected_color, tolerance=10):
+    item_tab_color = getColor(coord_item_tab_check)
+    prayer_tab_color = getColor(coord_prayer_tab_check)
+    if pixelMatchesColor(item_tab_color, color_tab_selected, tolerance=10):
         client.tab = 'Items'
         string_dict['inventory'].set('On items tab.')
-    elif pyautogui.pixelMatchesColor(client.getX(0.8714462299134734), client.getY(0.6254681647940075), tab_selected_color, tolerance=10):
+
+    elif pixelMatchesColor(prayer_tab_color, color_tab_selected, tolerance=10):
         client.tab = 'Prayer'
         string_dict['inventory'].set('On prayer tab.')
     else:
         client.tab = 'Unknown'
         string_dict['inventory'].set('On unknown tab.')
 
-    one_dose = round(client.getY(.5))
-    two_dose = one_dose - 7
-    three_dose = two_dose - 3
-    four_dose = three_dose - 2
-
-    for y in range(7):
-        starting_x = client.getX(0.7194066749072929)
-        for x in range(4):
-            if getColors(starting_x, four_dose):
-                inventory_table[x][y].set('4')
-            elif getColors(starting_x, three_dose):
-                inventory_table[x][y].set('3')
-            elif getColors(starting_x, two_dose):
-                inventory_table[x][y].set('2')
-            elif getColors(starting_x, one_dose):
-                inventory_table[x][y].set('1')
-            else:
-                inventory_table[x][y].set('  -  ')
-            starting_x = starting_x + 42
-        four_dose += 36
-        three_dose += 36
-        two_dose += 36
-        one_dose += 36
+    if client.tab == 'Items':
+        one_dose = coord_inv_slot1_1[1]
+        for row in range(7):
+            x = coord_inv_slot1_1[0]
+            for column in range(4):
+                color_array = [
+                    getColor((x, one_dose,)),
+                    getColor((x, one_dose-7,)),
+                    getColor((x, one_dose-10,)),
+                    getColor((x, one_dose-12,))
+                ]
+                if itemCheck(color_array, color_dwarven_rock, 10) == 4:
+                    inventory_table[row][column].set('(*)')
+                elif (itemCheck(color_array, color_empty_potion, 8)) == 4:
+                    inventory_table[row][column].set('0')
+                elif (result := itemCheck(color_array, color_range_potion, 30)) != 0:
+                    inventory_table[row][column].set(str(result))
+                elif (itemCheck(color_array, color_inv_empty, 15)) == 4:
+                    inventory_table[row][column].set('-')
+                else:
+                    inventory_table[row][column].set('  ?  ')
+                x += 42
+            one_dose += 36
 
 
 def readHealth(client):
-    health_color = [255, 6, 0]
-    if pyautogui.pixelMatchesColor(client.getX(0.6613102595797281), client.getY(0.8408239700374532), health_color, tolerance=10)\
-            and pyautogui.pixelMatchesColor(client.getX(0.6613102595797281), client.getY(0.8277153558052435), health_color, tolerance=10)\
-            and not pyautogui.pixelMatchesColor(client.getX(0.6588380716934487), client.getY(0.8389513108614233), health_color, tolerance=10):
+    if pixelMatchesColor(getColor(coord_health_check_1), color_health_is_present, tolerance=10)\
+            and pixelMatchesColor(getColor(coord_health_check_2,), color_health_is_present, tolerance=10)\
+            and not pixelMatchesColor(getColor(coord_health_false_check,), color_health_is_present, tolerance=10):
         client.health = '1'
         return '1 hp'
     else:
@@ -102,96 +62,127 @@ def readHealth(client):
         return '? hp'
 
 
-def getColors(x, y):
-    #print(f"--------Color at click: {str(pyautogui.pixel(X, Y))}")
-    range_color = [35, 149, 195]
-    if pyautogui.pixelMatchesColor(x, y, range_color, tolerance=40):
-        return True
-    else:
-        return False
+def NMZ(client, string_dict, lock_dict, inventory_table):
 
+    with lock_dict['status']:
+        string_dict['status'].set('NMZ Started.')
 
-def NMZmoveToRapidHeal(x, y):
-    pyautogui.moveTo(x, y, 1, pyautogui.easeOutQuad)
-
-
-def NMZ(client, status_var, health_var, lock, health_lock):
     client.setFocus()
-    status_var.set('NMZ Started.')
-    newx = random.normalvariate(((client.getX(0.9060568603213844) - client.getX(0.8726823238566132)) / 2) + client.getX(0.8726823238566132), 5.247710123)
-    newy = random.normalvariate(((client.getY(0.4250936329588015) - client.getY(0.4737827715355805)) / 2) + client.getY(0.4737827715355805), 4.446260313)
-    with lock:
-        if client.tab != 'prayer':
-            pyautogui.press('f3')
-        NMZmoveToRapidHeal(newx, newy)
+
     while True:
+        # Set Rapid Heal coords.
+        coords = getTRNVCoord(client.rect_rapid_heal)
+
+        # Check health and start rock cake thread if necessary.
         if client.health != '1' and client.eating == 'Pending':
-            client.eating = 'Eating'
-            newx = random.normalvariate(((client.getX(0.9060568603213844) - client.getX(0.8726823238566132)) / 2) + client.getX(0.8726823238566132), 5.247710123)
-            newy = random.normalvariate(((client.getY(0.4250936329588015) - client.getY(0.4737827715355805)) / 2) + client.getY(0.4737827715355805), 4.446260313)
-            threading.Thread(target=eatRockCake, args=(client, health_var, lock, health_lock,), daemon=True).start()
-        with lock:
-            client.setFocus()
-            status_var.set("Flicking Rapid Heal now.")
-            NMZmoveToRapidHeal(newx, newy)
-            if random.randrange(1, 4) == 1:
-                newx = random.normalvariate(((client.getX(0.9060568603213844) - client.getX(0.8726823238566132)) / 2) + client.getX(0.8726823238566132), 5.247710123)
-                newy = random.normalvariate(((client.getY(0.4250936329588015) - client.getY(0.4737827715355805)) / 2) + client.getY(0.4737827715355805), 4.446260313)
-            if client.tab != 'prayer':
-                pyautogui.press('f3')
+            threading.Thread(target=eatRockCake,
+                             args=(client, string_dict, lock_dict, inventory_table),
+                             daemon=True).start()
+
+        with lock_dict['status']:
+            string_dict['status'].set("Flicking Rapid.")
+
+        with lock_dict['movement']:
+
+            # Go to prayer tab if necessary
+            moveToTab(client, 'Prayer')
+
+            # Move to Rapid Heal coords.
+            moveMouse(coords)
+            time.sleep(getSleepTRNV(.2))
+
+            # Flick rapid heal.
             pyautogui.click()
-            time.sleep(random.normalvariate(.5, .15))
+            time.sleep(getSleepTRNV(.4))
             pyautogui.click()
-            if random.randrange(1, 6) == 1:
-                newx = random.normalvariate(((client.getX(0.9060568603213844) - client.getX(0.8726823238566132)) / 2) + client.getX(0.8726823238566132), 5.247710123)
-                newy = random.normalvariate(((client.getY(0.4250936329588015) - client.getY(0.4737827715355805)) / 2) + client.getY(0.4737827715355805), 4.446260313)
-                NMZmoveToRapidHeal(newx, newy)
-        sleep_duration = round(random.normalvariate(56, 5))
+
+        # Move mouse off screen and click
+
+        if client.eating == 'Pending':
+            with lock_dict['movement']:
+                with lock_dict['status']:
+                    string_dict['status'].set("Moving cursor off screen.")
+                moveOffScreen(client)
+
+        # Start waiting 1 minute before flicking rapid heal
+        sleep_duration = round(getSleepTRNV(55))
+        with lock_dict['status']:
+            for timer in range(sleep_duration):
+                string_dict['status'].set(f"{timer}/{sleep_duration - 1} Waiting to flick Rapid Heal.")
+                time.sleep(1)
+
+
+def moveOffScreen(client):  # Must have movement lock in calling function to call
+    moveMouse((client.rectangle.right + 10, client.rectangle.top + 10,))
+    time.sleep(getSleepTRNV(.3))
+    pyautogui.click()
+
+
+def moveToTab(client, tab):  # Only call with movement lock.
+    rect = client.rect_prayer_tab
+    f_key = 'f3'
+    if tab == 'Prayer':
+        rect = client.rect_prayer_tab
+        f_key = 'f3'
+    elif tab == 'Items':
+        rect = client.rect_inventory_tab
+        f_key = 'f2'
+    if client.tab != tab:
+        if random.randint(0, 1) == 0:
+            pyautogui.press(f_key)
+            time.sleep(getSleepTRNV(.27))
+        else:
+            moveMouse(getTRNVCoord(rect))
+            time.sleep(getSleepTRNV(.4))
+            pyautogui.click()
+            time.sleep(getSleepTRNV(.3))
+
+
+def eatRockCake(client, string_dict, lock_dict, inventory_table):
+    print("In eat rock cake.")
+    client.eating = 'Eating'
+
+    with lock_dict['health']:
+        print("Have lock in eat rock cake.")
+        # Wait for timer to eat rock cake.
+        sleep_duration = round(getSleepTRNV(10))
         for timer in range(sleep_duration):
-            status_var.set(f"{timer}/{sleep_duration - 1} Waiting to flick Rapid Heal.")
+            string_dict['health'].set(f"{timer}/{sleep_duration} Waiting to guzzle rock cake.")
             time.sleep(1)
 
+        string_dict['health'].set("Guzzling rock cake now.")
 
-def eatRockCake(client, health_var, lock, health_lock):
-    newx = random.normalvariate(((client.getX(0.7342398022249691) - client.getX(0.7058096415327565)) / 2) + client.getX(0.7058096415327565),3.947710123)
-    newy = random.normalvariate(((client.getY(0.5) - client.getY(0.5430711610486891)) / 2) + client.getY(0.5430711610486891),3.146260313)
-    print(f"newx: {newx}\nnewy: {newy}")
-    with health_lock:
-        sleep_duration = round(random.normalvariate(30, 5))
-        for timer in range(sleep_duration):
-            health_var.set(f"{timer}/{sleep_duration} Waiting to guzzle rock cake.")
-            time.sleep(1)
-        health_var.set("Guzzling rock cake now.")
-        with lock:
-            client.setFocus()
-            pyautogui.press('f2')
-            time.sleep(random.normalvariate(.8, .1))
-            pyautogui.moveTo(newx, newy, (random.normalvariate(.6, .06)), pyautogui.easeOutQuad)
-            pyautogui.rightClick()
-            time.sleep(random.normalvariate(.7, .1))
-            newx = newx + random.normalvariate(0, 2.5)
-            newy = newy + random.normalvariate(45, .1)
-            pyautogui.moveTo(newx, newy, (random.normalvariate(.4, .012)), pyautogui.easeOutQuad)
-            time.sleep(random.normalvariate(.6, .221))
-            pyautogui.click()
-            client.eating = 'Pending'
+        moveToTab(client, 'Items')
 
-
-def readPassword():  # Reads password from the password.txt then copies it to the clipboard.
-    with open('password.txt', 'r') as reader:
-        pyperclip.copy(reader.readline())
-    print('Read password from file.')
+        goToInventorySpot(client, string_dict, lock_dict, inventory_table, '(*)')
+        time.sleep(getSleepTRNV(.2))
+        pyautogui.rightClick()
+        time.sleep(getSleepTRNV(.4))
+        x, y = pyautogui.position()
+        moveMouse((getTRNV(x, x-5, x+5), getTRNV(y+41, y+36, y+46),))
+        time.sleep(getSleepTRNV(.2))
+        pyautogui.click()
+        time.sleep(getSleepTRNV(.4))
+        client.eating = 'Pending'
+        moveOffScreen(client)
 
 
 def login(client):  # Takes control of the mouse and keyboard to login to Runelite.
     print('Beginning login script.')
-    client.updateClient()
+    readPassword()
+    client.update()
     client.setFocus()
-    existing_user_box_on_screen = [19, 20, 21]
-    if pyautogui.pixelMatchesColor(client.getX(0.48825710754017304), client.getY(0.4101123595505618), existing_user_box_on_screen, tolerance=10):
+    current_color = getColor(coord_login_box_check)
+    if pixelMatchesColor(current_color, color_user_box_is_present, tolerance=10):
         print("Clicking \"Existing user\" box.")
-        pyautogui.click(client.getX(0.48825710754017304), client.getY(0.4101123595505618), interval=1)
-    pyautogui.click(client.getX(.4326328801), client.getY(.4588014981), interval=1)
+        moveMouse(client.coord_existing_user)
+        time.sleep(getSleepTRNV(.4))
+        pyautogui.click()
+        time.sleep(getSleepTRNV(1))
+    moveMouse(client.coord_login_entry)
+    time.sleep(getSleepTRNV(.2))
+    pyautogui.click()
+    time.sleep(getSleepTRNV(.2))
     pyautogui.keyDown('ctrl')
     pyautogui.press('v')
     pyautogui.keyUp('ctrl')
@@ -208,15 +199,15 @@ def autoAlch(client, string_var, lock):
     secondCoords = [client.getX(.8936959209), client.getY(.3164794007)]
     clickrectangle = firstCoords + secondCoords
     # Set Smelter
-    smelterPOS = [round(client.client_rectangle.left + (client.client_width * .8294190358)),
-                  round(client.client_rectangle.bottom - (client.client_height * .3689138577))]
+    smelterPOS = [round(client.rectangle.left + (client.client_width * .8294190358)),
+                  round(client.rectangle.bottom - (client.client_height * .3689138577))]
     print(str(smelterPOS))
     smelterColor = pyautogui.pixel(smelterPOS[0], smelterPOS[1])
     print(str(smelterPOS) + " Mouse position")
     print(str(smelterColor) + " Pixel color")
     with lock:
         string_var.set("Auto-Alching")
-    client.updateClient()
+    client.update()
     randominterval = 1
     quitCounter = 0
     pyautogui.press('f4')
@@ -233,14 +224,14 @@ def autoAlch(client, string_var, lock):
             quitCounter = 0
         elif (quitCounter > 10):
             break
-        if (random.randrange(1, 6) == 1):
+        if random.randrange(1, 6) == 1:
             newx = random.normalvariate(((clickrectangle[2] - clickrectangle[0]) / 2) + clickrectangle[0], 1.848448998)
             newy = random.normalvariate(((clickrectangle[3] - clickrectangle[1]) / 2) + clickrectangle[1], 1.599684449)
             print("{} , {}".format(newx, newy))
             # pyautogui.moveTo(random.randrange(clickrectangle[0], clickrectangle[2]),random.randrange(clickrectangle[1], clickrectangle[3]), 1, pyautogui.easeOutQuad)
             pyautogui.moveTo(newx, newy, 1, pyautogui.easeOutQuad)
             print("Adjusting click location.")
-        if (random.randrange(1, 10) == 1):
+        if random.randrange(1, 10) == 1:
             randominterval = random.uniform(0.8, 1.2)
             print("Adjusting click interval.")
 
