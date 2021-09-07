@@ -26,28 +26,29 @@ def readInventory(client, string_dict, lock_dict, inventory_table):
         client.tab = 'Unknown'
         string_dict['inventory'].set('On unknown tab.')
 
-    one_dose = coord_inv_slot1_1[1]
-    for row in range(7):
-        x = coord_inv_slot1_1[0]
-        for column in range(4):
-            color_array = [
-                getColor((x, one_dose,)),
-                getColor((x, one_dose-7,)),
-                getColor((x, one_dose-10,)),
-                getColor((x, one_dose-12,))
-            ]
-            if itemCheck(color_array, color_dwarven_rock, 10) == 4:
-                inventory_table[row][column].set('(*)')
-            elif (itemCheck(color_array, color_empty_potion, 8)) == 4:
-                inventory_table[row][column].set('0')
-            elif (result := itemCheck(color_array, color_range_potion, 30)) != 0:
-                inventory_table[row][column].set(str(result))
-            elif (itemCheck(color_array, color_inv_empty, 15)) == 4:
-                inventory_table[row][column].set('-')
-            else:
-                inventory_table[row][column].set('  ?  ')
-            x += 42
-        one_dose += 36
+    if client.tab == 'Items':
+        one_dose = coord_inv_slot1_1[1]
+        for row in range(7):
+            x = coord_inv_slot1_1[0]
+            for column in range(4):
+                color_array = [
+                    getColor((x, one_dose,)),
+                    getColor((x, one_dose-7,)),
+                    getColor((x, one_dose-10,)),
+                    getColor((x, one_dose-12,))
+                ]
+                if itemCheck(color_array, color_dwarven_rock, 10) == 4:
+                    inventory_table[row][column].set('(*)')
+                elif (itemCheck(color_array, color_empty_potion, 8)) == 4:
+                    inventory_table[row][column].set('0')
+                elif (result := itemCheck(color_array, color_range_potion, 30)) != 0:
+                    inventory_table[row][column].set(str(result))
+                elif (itemCheck(color_array, color_inv_empty, 15)) == 4:
+                    inventory_table[row][column].set('-')
+                else:
+                    inventory_table[row][column].set('  ?  ')
+                x += 42
+            one_dose += 36
 
 
 def readHealth(client):
@@ -82,12 +83,13 @@ def NMZ(client, string_dict, lock_dict, inventory_table):
             string_dict['status'].set("Flicking Rapid.")
 
         with lock_dict['movement']:
+
+            # Go to prayer tab if necessary
+            moveToTab(client, 'Prayer')
+
             # Move to Rapid Heal coords.
             moveMouse(coords)
             time.sleep(getSleepTRNV(.2))
-
-            # Go to prayer tab if necessary
-            moveToTab(client, 'prayer')
 
             # Flick rapid heal.
             pyautogui.click()
@@ -100,17 +102,20 @@ def NMZ(client, string_dict, lock_dict, inventory_table):
             with lock_dict['movement']:
                 with lock_dict['status']:
                     string_dict['status'].set("Moving cursor off screen.")
-                coords = (getTRNV(2012, 2000, 2024), getTRNV(720, 700, 740),)
-                moveMouse(coords)
-                time.sleep(getSleepTRNV(.4))
-                pyautogui.click()
+                moveOffScreen(client)
 
         # Start waiting 1 minute before flicking rapid heal
-        sleep_duration = getSleepTRNV(55)
+        sleep_duration = round(getSleepTRNV(55))
         with lock_dict['status']:
             for timer in range(sleep_duration):
                 string_dict['status'].set(f"{timer}/{sleep_duration - 1} Waiting to flick Rapid Heal.")
                 time.sleep(1)
+
+
+def moveOffScreen(client):  # Must have movement lock in calling function to call
+    moveMouse((client.rectangle.right + 10, client.rectangle.top + 10,))
+    time.sleep(getSleepTRNV(.3))
+    pyautogui.click()
 
 
 def moveToTab(client, tab):  # Only call with movement lock.
@@ -127,20 +132,20 @@ def moveToTab(client, tab):  # Only call with movement lock.
             pyautogui.press(f_key)
             time.sleep(getSleepTRNV(.27))
         else:
-            moveMouse(rect)
+            moveMouse(getTRNVCoord(rect))
             time.sleep(getSleepTRNV(.4))
             pyautogui.click()
             time.sleep(getSleepTRNV(.3))
 
 
 def eatRockCake(client, string_dict, lock_dict, inventory_table):
-
+    print("In eat rock cake.")
     client.eating = 'Eating'
 
     with lock_dict['health']:
-
+        print("Have lock in eat rock cake.")
         # Wait for timer to eat rock cake.
-        sleep_duration = getSleepTRNV(30)
+        sleep_duration = round(getSleepTRNV(10))
         for timer in range(sleep_duration):
             string_dict['health'].set(f"{timer}/{sleep_duration} Waiting to guzzle rock cake.")
             time.sleep(1)
@@ -153,12 +158,13 @@ def eatRockCake(client, string_dict, lock_dict, inventory_table):
         time.sleep(getSleepTRNV(.2))
         pyautogui.rightClick()
         time.sleep(getSleepTRNV(.4))
-        # newx = newx + random.normalvariate(0, 2.5)
-        # newy = newy + random.normalvariate(45, .1)
-        # pyautogui.moveTo(newx, newy, (random.normalvariate(.4, .012)), pyautogui.easeOutQuad)
-        # time.sleep(random.normalvariate(.6, .221))
-        # pyautogui.click()
+        x, y = pyautogui.position()
+        moveMouse((getTRNV(x, x-5, x+5), getTRNV(y+41, y+36, y+46),))
+        time.sleep(getSleepTRNV(.2))
+        pyautogui.click()
+        time.sleep(getSleepTRNV(.4))
         client.eating = 'Pending'
+        moveOffScreen(client)
 
 
 def login(client):  # Takes control of the mouse and keyboard to login to Runelite.

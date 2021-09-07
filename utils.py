@@ -71,8 +71,6 @@ def moveMouse(end_coords):
                 time.sleep(getSleepTRNV(.04))
 
 
-
-
 def itemCheck(colors, sample, tolerance):
     counter = 0
     if pixelMatchesColor(colors[0], sample, tolerance=tolerance):

@@ -80,7 +80,7 @@ class runelite:
         self.rect_styles_tab = rectangle(self.getAbsoluteCoord(527, 196), self.getAbsoluteCoord(562, 229))
         self.rect_levels_tab = rectangle(self.getAbsoluteCoord(564, 196), self.getAbsoluteCoord(599, 229))
         self.rect_quest_tab = rectangle(self.getAbsoluteCoord(601, 196), self.getAbsoluteCoord(634, 229))
-        self.rect_inventory_tab = rectangle(self.getAbsoluteCoord(638, 196), self.getAbsoluteCoord(673, 229))
+        self.rect_inventory_tab = rectangle(self.getAbsoluteCoord(638, 196), self.getAbsoluteCoord(670, 229))
         self.rect_gear_tab = rectangle(self.getAbsoluteCoord(675, 196), self.getAbsoluteCoord(710, 229))
         self.rect_prayer_tab = rectangle(self.getAbsoluteCoord(712, 196), self.getAbsoluteCoord(747, 229))
         self.rect_magic_tab = rectangle(self.getAbsoluteCoord(749, 196), self.getAbsoluteCoord(784, 229))
