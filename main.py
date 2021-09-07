@@ -20,7 +20,7 @@ def inventoryListener(string_dict, lock_dict):
 
 
 def goToRock(string_dict, lock_dict):
-    goToSpot(client, string_dict, lock_dict, inventory_table, '(*)')
+    goToInventorySpot(client, string_dict, lock_dict, inventory_table, '(*)')
 
 
 def healthListener(string_dict, lock_dict):
@@ -58,8 +58,16 @@ print(f'Thread initialized in main: {threading.get_ident()}')
 
 
 # --Threading locks
-locks = {'status': threading.Lock(), 'health': threading.Lock(), 'inventory': threading.Lock()}
-string_vars = {'status': tk.StringVar(), 'health': tk.StringVar(), 'inventory': tk.StringVar()}
+locks = {'status': threading.Lock(),
+         'health': threading.Lock(),
+         'inventory': threading.Lock(),
+         'movement': threading.Lock()
+         }
+
+string_vars = {'status': tk.StringVar(),
+               'health': tk.StringVar(),
+               'inventory': tk.StringVar()
+               }
 
 # --Widgets
 static_health_label = tk.Label(text='Health: ').grid(row=2, column=1)
