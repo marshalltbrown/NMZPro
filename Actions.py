@@ -1,4 +1,6 @@
 import threading
+import time
+
 import pyautogui
 import keyboard
 import random
@@ -6,11 +8,106 @@ from utils import *
 
 
 def goToInventorySpot(client, string_dict, lock_dict, inventory_table, item):
-    for row in range(7):
-        for column in range(4):
+    row = 0
+    column = 0
+    while row <= 6:
+        while column <= 3:
             if inventory_table[row][column].get() == item:
+                print(f"Found {item} in inv ( {row}, {column} )")
                 moveMouse(getTRNVCoord(client.table_inventory_rects[row][column]))
+                row = 9
+                column = 9
+            column += 1
+        row += 1
+        column = 0
 
+
+def readPotions(client, string_dict, lock_dict, inventory_table):
+
+    if 'Drink' not in string_dict['absorption'].get():
+        with lock_dict['absorption']:
+            if pixelMatchesColor(getColor((28, 88,)), color_white, tolerance=2)\
+                    and pixelMatchesColor(getColor((28, 101,)), color_white, tolerance=2):
+                string_dict['absorption'].set('1**')
+            elif pixelMatchesColor(getColor((28, 92,)), color_white, tolerance=2):
+                string_dict['absorption'].set('2**')
+            elif pixelMatchesColor(getColor((28, 99,)), color_white, tolerance=2):
+                string_dict['absorption'].set('3**')
+            else:
+                string_dict['absorption'].set('???')
+
+    if 'Drink' not in string_dict['buff'].get():
+        with lock_dict['buff']:
+            # Checks if buff is in double digits still
+            current_pixel = 123
+            previous_color = 0
+            green_lines = 0
+            while current_pixel <= 141:
+                current_color = getColor((current_pixel, 346,))
+                if pixelMatchesColor(current_color, color_green, tolerance=2) and decimalColortoRGB(previous_color) != color_green:
+                    green_lines += 1
+                previous_color = current_color
+                current_pixel += 1
+
+            if green_lines == 2:
+                string_dict['buff'].set('>=10 remaining')
+            elif green_lines == 1:
+                string_dict['buff'].set('<=9 remaining')
+            else:
+                string_dict['buff'].set('Unknown')
+
+    if string_dict['absorption'].get() == '2**' or string_dict['absorption'].get() == '1**':
+        threading.Thread(target=drinkAbsorption,
+                         args=(client, string_dict, lock_dict, inventory_table),
+                         daemon=True).start()
+
+    if string_dict['buff'].get() == '<=9 remaining':
+        threading.Thread(target=drinkBuff,
+                         args=(client, string_dict, lock_dict, inventory_table),
+                         daemon=True).start()
+
+
+def drinkBuff(client, string_dict, lock_dict, inventory_table):
+    sleep_duration = round(getSleepTRNV(60))
+    with lock_dict['buff']:
+        for timer in range(sleep_duration):
+            string_dict['buff'].set(f"{timer}/{sleep_duration} Waiting to Drink.")
+            time.sleep(1)
+        string_dict['buff'].set("Waiting on other movement to finish.")
+
+    with lock_dict['movement']:
+        with lock_dict['buff']:
+            string_dict['buff'].set("Drinking.")
+        moveToTab(client, "Items")
+        time.sleep(getSleepTRNV(1))
+        goToInventorySpot(client, string_dict, lock_dict, inventory_table, "S")
+        time.sleep(getSleepTRNV(.5))
+        pyautogui.click()
+        time.sleep(getSleepTRNV(.05))
+        moveOffScreen(client)
+        string_dict['buff'].set("Done.")
+
+
+def drinkAbsorption(client, string_dict, lock_dict, inventory_table):
+    sleep_duration = round(getSleepTRNV(70))
+    with lock_dict['absorption']:
+        for timer in range(sleep_duration):
+            string_dict['absorption'].set(f"{timer}/{sleep_duration} Waiting to Drink.")
+            time.sleep(1)
+        string_dict['absorption'].set("Waiting on other movement to finish.")
+
+    with lock_dict['movement']:
+        with lock_dict['absorption']:
+            string_dict['absorption'].set("Drinking.")
+            moveToTab(client, "Items")
+            time.sleep(getSleepTRNV(1.3))
+            goToInventorySpot(client, string_dict, lock_dict, inventory_table, "A")
+            time.sleep(getSleepTRNV(.5))
+            for i in range(round(getTRNV(14, 12, 16))):
+                pyautogui.click()
+                time.sleep(getSleepTRNV(.05))
+            moveOffScreen(client)
+    string_dict['absorption'].set("Done.")
 
 def readInventory(client, string_dict, lock_dict, inventory_table):
     item_tab_color = getColor(coord_item_tab_check)
@@ -42,13 +139,19 @@ def readInventory(client, string_dict, lock_dict, inventory_table):
                 elif (itemCheck(color_array, color_empty_potion, 8)) == 4:
                     inventory_table[row][column].set('0')
                 elif (result := itemCheck(color_array, color_range_potion, 30)) != 0:
-                    inventory_table[row][column].set(str(result))
+                    inventory_table[row][column].set("R")
+                elif (result := itemCheck(color_array, color_absorption_pot, 15)) != 0:
+                    inventory_table[row][column].set("A")
+                elif (result := itemCheck(color_array, color_strength_pot, 15)) != 0:
+                    inventory_table[row][column].set("S")
                 elif (itemCheck(color_array, color_inv_empty, 15)) == 4:
                     inventory_table[row][column].set('-')
                 else:
                     inventory_table[row][column].set('  ?  ')
                 x += 42
             one_dose += 36
+
+    client.update()  # WARNING - IS UPDATING CLIENT EVERY SECOND
 
 
 def readHealth(client):
@@ -128,7 +231,7 @@ def moveToTab(client, tab):  # Only call with movement lock.
         rect = client.rect_inventory_tab
         f_key = 'f2'
     if client.tab != tab:
-        if random.randint(0, 1) == 0:
+        if random.randint(0, 1) == 2: # Turned off F keys, need focus on runelite
             pyautogui.press(f_key)
             time.sleep(getSleepTRNV(.27))
         else:
@@ -145,7 +248,7 @@ def eatRockCake(client, string_dict, lock_dict, inventory_table):
     with lock_dict['health']:
         print("Have lock in eat rock cake.")
         # Wait for timer to eat rock cake.
-        sleep_duration = round(getSleepTRNV(10))
+        sleep_duration = round(getSleepTRNV(5))
         for timer in range(sleep_duration):
             string_dict['health'].set(f"{timer}/{sleep_duration} Waiting to guzzle rock cake.")
             time.sleep(1)
