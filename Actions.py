@@ -100,7 +100,7 @@ def drinkAbsorption(client, string_dict, lock_dict, inventory_table):
         with lock_dict['absorption']:
             string_dict['absorption'].set("Drinking.")
             moveToTab(client, "Items")
-            time.sleep(getSleepTRNV(1.3))
+            time.sleep(getSleepTRNV(.3))
             goToInventorySpot(client, string_dict, lock_dict, inventory_table, "A")
             time.sleep(getSleepTRNV(.5))
             for i in range(round(getTRNV(14, 12, 16))):
@@ -193,23 +193,19 @@ def NMZ(client, string_dict, lock_dict, inventory_table):
 
             # Move to Rapid Heal coords.
             moveMouse(coords)
-            time.sleep(getSleepTRNV(.2))
+            time.sleep(getSleepTRNV(.15))
 
             # Flick rapid heal.
             pyautogui.click()
             time.sleep(getSleepTRNV(.4))
             pyautogui.click()
 
-        # Move mouse off screen and click
-
-        if client.eating == 'Pending':
-            with lock_dict['movement']:
-                with lock_dict['status']:
-                    string_dict['status'].set("Moving cursor off screen.")
-                moveOffScreen(client)
+            # Move off screen
+            time.sleep(getSleepTRNV(.15))
+            moveOffScreen(client)
 
         # Start waiting 1 minute before flicking rapid heal
-        sleep_duration = round(getSleepTRNV(55))
+        sleep_duration = round(getSleepTRNV(52))
         with lock_dict['status']:
             for timer in range(sleep_duration):
                 string_dict['status'].set(f"{timer}/{sleep_duration - 1} Waiting to flick Rapid Heal.")
@@ -235,19 +231,17 @@ def moveToTab(client, tab):  # Only call with movement lock.
         if random.randint(0, 1) == 2: # Turned off F keys, need focus on runelite
             pyautogui.press(f_key)
             time.sleep(getSleepTRNV(.27))
-        else:
+        else: # currently always false to this
             moveMouse(getTRNVCoord(rect))
-            time.sleep(getSleepTRNV(.4))
+            time.sleep(getSleepTRNV(.2))
             pyautogui.click()
-            time.sleep(getSleepTRNV(.3))
+            time.sleep(getSleepTRNV(.1))
 
 
 def eatRockCake(client, string_dict, lock_dict, inventory_table):
-    print("In eat rock cake.")
     client.eating = 'Eating'
 
     with lock_dict['health']:
-        print("Have lock in eat rock cake.")
         # Wait for timer to eat rock cake.
         sleep_duration = round(getSleepTRNV(5))
         for timer in range(sleep_duration):
@@ -256,17 +250,17 @@ def eatRockCake(client, string_dict, lock_dict, inventory_table):
 
         string_dict['health'].set("Guzzling rock cake now.")
 
+    with lock_dict['movement']:
         moveToTab(client, 'Items')
-
         goToInventorySpot(client, string_dict, lock_dict, inventory_table, '(*)')
-        time.sleep(getSleepTRNV(.2))
+        time.sleep(getSleepTRNV(.1))
         pyautogui.rightClick()
-        time.sleep(getSleepTRNV(.4))
+        time.sleep(getSleepTRNV(.2))
         x, y = pyautogui.position()
         moveMouse((getTRNV(x, x-5, x+5), getTRNV(y+41, y+36, y+46),))
-        time.sleep(getSleepTRNV(.2))
+        time.sleep(getSleepTRNV(.1))
         pyautogui.click()
-        time.sleep(getSleepTRNV(.4))
+        time.sleep(getSleepTRNV(.2))
         client.eating = 'Pending'
         moveOffScreen(client)
 
