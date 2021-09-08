@@ -109,6 +109,7 @@ def drinkAbsorption(client, string_dict, lock_dict, inventory_table):
             moveOffScreen(client)
     string_dict['absorption'].set("Done.")
 
+
 def readInventory(client, string_dict, lock_dict, inventory_table):
     item_tab_color = getColor(coord_item_tab_check)
     prayer_tab_color = getColor(coord_prayer_tab_check)
@@ -216,7 +217,7 @@ def NMZ(client, string_dict, lock_dict, inventory_table):
 
 
 def moveOffScreen(client):  # Must have movement lock in calling function to call
-    moveMouse((client.rectangle.right + 10, client.rectangle.top + 10,))
+    moveMouse((client.rectangle.right + 10, client.rectangle.top + getSleepTRNV(300),))
     time.sleep(getSleepTRNV(.3))
     pyautogui.click()
 
