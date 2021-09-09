@@ -11,6 +11,12 @@ class runelite:
         self.tab = 'Unknown'
         self.health = 'Unknown'
         self.eating = 'Pending'
+        self.absorption = 'Pending'
+        self.buff = 'Pending'
+        self.flicking = False
+        self.win32ui_window = True
+        self.absorbs_remaining = True
+        self.buffs_remaining = True
         self.rect_alch = None
         self.rect_rapid_heal = None
         self.rect_rock_cake = None
