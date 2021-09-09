@@ -1,119 +1,149 @@
 import threading
+import win32ui
 import pyautogui
 import keyboard
-import random
 from utils import *
 
 
-def goToInventorySpot(client, string_dict, lock_dict, inventory_table, item):
-    for row in range(7):
-        for column in range(4):
-            if inventory_table[row][column].get() == item:
-                moveMouse(getTRNVCoord(client.table_inventory_rects[row][column]))
+def NMZ(client, string_dict, lock, inventory_table):
 
-
-def readInventory(client, string_dict, lock_dict, inventory_table):
-    item_tab_color = getColor(coord_item_tab_check)
-    prayer_tab_color = getColor(coord_prayer_tab_check)
-    if pixelMatchesColor(item_tab_color, color_tab_selected, tolerance=10):
-        client.tab = 'Items'
-        string_dict['inventory'].set('On items tab.')
-
-    elif pixelMatchesColor(prayer_tab_color, color_tab_selected, tolerance=10):
-        client.tab = 'Prayer'
-        string_dict['inventory'].set('On prayer tab.')
-    else:
-        client.tab = 'Unknown'
-        string_dict['inventory'].set('On unknown tab.')
-
-    if client.tab == 'Items':
-        one_dose = coord_inv_slot1_1[1]
-        for row in range(7):
-            x = coord_inv_slot1_1[0]
-            for column in range(4):
-                color_array = [
-                    getColor((x, one_dose,)),
-                    getColor((x, one_dose-7,)),
-                    getColor((x, one_dose-10,)),
-                    getColor((x, one_dose-12,))
-                ]
-                if itemCheck(color_array, color_dwarven_rock, 10) == 4:
-                    inventory_table[row][column].set('(*)')
-                elif (itemCheck(color_array, color_empty_potion, 8)) == 4:
-                    inventory_table[row][column].set('0')
-                elif (result := itemCheck(color_array, color_range_potion, 30)) != 0:
-                    inventory_table[row][column].set(str(result))
-                elif (itemCheck(color_array, color_inv_empty, 15)) == 4:
-                    inventory_table[row][column].set('-')
-                else:
-                    inventory_table[row][column].set('  ?  ')
-                x += 42
-            one_dose += 36
-
-
-def readHealth(client):
-    if pixelMatchesColor(getColor(coord_health_check_1), color_health_is_present, tolerance=10)\
-            and pixelMatchesColor(getColor(coord_health_check_2,), color_health_is_present, tolerance=10)\
-            and not pixelMatchesColor(getColor(coord_health_false_check,), color_health_is_present, tolerance=10):
-        client.health = '1'
-        return '1 hp'
-    else:
-        client.health = 'Unknown'
-        return '? hp'
-
-
-def NMZ(client, string_dict, lock_dict, inventory_table):
-
-    with lock_dict['status']:
-        string_dict['status'].set('NMZ Started.')
+    string_dict['status'].set('NMZ Started.')
 
     client.setFocus()
 
     while True:
+        if client.absorption == 'Pending':
+            if string_dict['absorption'].get() == '200+' or string_dict['absorption'].get() == '100+':
+                threading.Thread(target=drinkAbsorption,
+                                 args=(client, string_dict, lock, inventory_table),
+                                 daemon=True).start()
+        if client.buff == 'Pending':
+            if string_dict['buff'].get() == '<=9 remaining':
+                threading.Thread(target=drinkBuff,
+                                 args=(client, string_dict, lock, inventory_table),
+                                 daemon=True).start()
+
+        # Check health and start rock cake thread if necessary.
+        if client.eating == 'Pending':
+            if string_dict['health'].get() != '1 HP':
+                threading.Thread(target=eatRockCake,
+                                 args=(client, string_dict, lock, inventory_table),
+                                 daemon=True).start()
+
+        if not client.flicking:
+            threading.Thread(target=flickRapidHeal,
+                             args=(client, string_dict, lock),
+                             daemon=True).start()
+        time.sleep(1)
+
+
+def goToInventorySpot(client, string_dict, lock, inventory_table, item):
+    row = 0
+    column = 0
+    while row <= 6:
+        while column <= 3:
+            if inventory_table[row][column].get() == item:
+                #print(f"Found {item} in inv ( {row}, {column} )")
+                moveMouse(getTRNVCoord(client.table_inventory_rects[row][column]))
+                row = 9
+                column = 9
+            column += 1
+        row += 1
+        column = 0
+
+
+def drinkBuff(client, string_dict, lock, inventory_table):
+
+    client.buff = 'Drinking'
+
+    sleep_duration = round(getSleepTRNV(60))
+    for timer in range(sleep_duration):
+        string_dict['buff'].set(f"{timer}/{sleep_duration} Waiting to Drink.")
+        time.sleep(1)
+
+    string_dict['buff'].set("Waiting on other movement.")
+    with lock:
+        string_dict['buff'].set("Drinking.")
+        moveToTab(client, "Items")
+        time.sleep(getSleepTRNV(1))
+        goToInventorySpot(client, string_dict, lock, inventory_table, "S")
+        time.sleep(getSleepTRNV(.5))
+        pyautogui.click()
+        time.sleep(getSleepTRNV(.05))
+    if not lock.locked():
+        with lock:
+            moveOffScreen(client)
+            time.sleep(getSleepTRNV(.2))
+    string_dict['buff'].set("Done.")
+    client.buff = 'Pending'
+
+
+def drinkAbsorption(client, string_dict, lock, inventory_table):
+
+    client.absorption = 'Drinking'
+
+    sleep_duration = round(getSleepTRNV(70))
+    for timer in range(sleep_duration):
+        string_dict['absorption'].set(f"{timer}/{sleep_duration} Waiting to Drink.")
+        time.sleep(1)
+
+    string_dict['absorption'].set("Waiting.")
+    with lock:
+        string_dict['absorption'].set("Drinking.")
+        moveToTab(client, "Items")
+        time.sleep(getSleepTRNV(.3))
+        goToInventorySpot(client, string_dict, lock, inventory_table, "A")
+        time.sleep(getSleepTRNV(.5))
+        for i in range(round(getTRNV(14, 12, 16))):
+            pyautogui.click()
+            time.sleep(getSleepTRNV(.05))
+    if not lock.locked():
+        with lock:
+            moveOffScreen(client)
+            time.sleep(getSleepTRNV(.2))
+
+    string_dict['absorption'].set("Done.")
+    client.absorption = 'Pending'
+
+
+def flickRapidHeal(client, string_dict, lock):
+    client.flicking = True
+    # Start waiting 1 minute before flicking rapid heal
+    sleep_duration = round(getSleepTRNV(52))
+    for timer in range(sleep_duration):
+        string_dict['status'].set(f"{timer}/{sleep_duration - 1} Waiting to flick.")
+        time.sleep(1)
+
+    string_dict['status'].set("Flicking Rapid.")
+
+    with lock:
+        # Go to prayer tab if necessary
+        moveToTab(client, 'Prayer')
+        time.sleep(getSleepTRNV(.15))
+
         # Set Rapid Heal coords.
         coords = getTRNVCoord(client.rect_rapid_heal)
 
-        # Check health and start rock cake thread if necessary.
-        if client.health != '1' and client.eating == 'Pending':
-            threading.Thread(target=eatRockCake,
-                             args=(client, string_dict, lock_dict, inventory_table),
-                             daemon=True).start()
+        # Move to Rapid Heal coords.
+        moveMouse(coords)
+        time.sleep(getSleepTRNV(.15))
 
-        with lock_dict['status']:
-            string_dict['status'].set("Flicking Rapid.")
+        # Flick rapid heal.
+        pyautogui.click()
+        time.sleep(getSleepTRNV(.4))
+        pyautogui.click()
 
-        with lock_dict['movement']:
-
-            # Go to prayer tab if necessary
-            moveToTab(client, 'Prayer')
-
-            # Move to Rapid Heal coords.
-            moveMouse(coords)
+        # Move off screen
+        time.sleep(getSleepTRNV(.15))
+    if not lock.locked():
+        with lock:
+            moveOffScreen(client)
             time.sleep(getSleepTRNV(.2))
-
-            # Flick rapid heal.
-            pyautogui.click()
-            time.sleep(getSleepTRNV(.4))
-            pyautogui.click()
-
-        # Move mouse off screen and click
-
-        if client.eating == 'Pending':
-            with lock_dict['movement']:
-                with lock_dict['status']:
-                    string_dict['status'].set("Moving cursor off screen.")
-                moveOffScreen(client)
-
-        # Start waiting 1 minute before flicking rapid heal
-        sleep_duration = round(getSleepTRNV(55))
-        with lock_dict['status']:
-            for timer in range(sleep_duration):
-                string_dict['status'].set(f"{timer}/{sleep_duration - 1} Waiting to flick Rapid Heal.")
-                time.sleep(1)
+    client.flicking = False
 
 
 def moveOffScreen(client):  # Must have movement lock in calling function to call
-    moveMouse((client.rectangle.right + 10, client.rectangle.top + 10,))
+    moveMouse((client.rectangle.right + 10, client.rectangle.top + getSleepTRNV(300),))
     time.sleep(getSleepTRNV(.3))
     pyautogui.click()
 
@@ -128,43 +158,50 @@ def moveToTab(client, tab):  # Only call with movement lock.
         rect = client.rect_inventory_tab
         f_key = 'f2'
     if client.tab != tab:
-        if random.randint(0, 1) == 0:
+        if random.randint(0, 1) == 2:  # Turned off F keys, need focus on runelite
             pyautogui.press(f_key)
             time.sleep(getSleepTRNV(.27))
-        else:
+        else:  # currently always false to this
             moveMouse(getTRNVCoord(rect))
-            time.sleep(getSleepTRNV(.4))
+            time.sleep(getSleepTRNV(.2))
             pyautogui.click()
-            time.sleep(getSleepTRNV(.3))
 
 
-def eatRockCake(client, string_dict, lock_dict, inventory_table):
-    print("In eat rock cake.")
+def eatRockCake(client, string_dict, lock, inventory_table):
     client.eating = 'Eating'
+    # Wait for timer to eat rock cake.
+    sleep_duration = round(getSleepTRNV(.1))
+    for timer in range(sleep_duration):
+        string_dict['health'].set(f"{timer}/{sleep_duration} Waiting to guzzle rock cake.")
+        time.sleep(1)
 
-    with lock_dict['health']:
-        print("Have lock in eat rock cake.")
-        # Wait for timer to eat rock cake.
-        sleep_duration = round(getSleepTRNV(10))
-        for timer in range(sleep_duration):
-            string_dict['health'].set(f"{timer}/{sleep_duration} Waiting to guzzle rock cake.")
-            time.sleep(1)
+    string_dict['health'].set("Guzzling rock cake now.")
 
-        string_dict['health'].set("Guzzling rock cake now.")
+    with lock:
+
+        window = win32ui.FindWindow(None, "RuneLite")
+        dc = window.GetWindowDC()
+        is_2hp = False
+        if pixelMatchesColor(dc.GetPixel(533, 86), color_health_is_present, tolerance=10) \
+                and pixelMatchesColor(dc.GetPixel(537, 92), color_health_is_present, tolerance=10):
+            is_2hp = True
 
         moveToTab(client, 'Items')
-
-        goToInventorySpot(client, string_dict, lock_dict, inventory_table, '(*)')
-        time.sleep(getSleepTRNV(.2))
+        time.sleep(getSleepTRNV(.1))
+        goToInventorySpot(client, string_dict, lock, inventory_table, '(*)')
+        time.sleep(getSleepTRNV(.1))
         pyautogui.rightClick()
-        time.sleep(getSleepTRNV(.4))
-        x, y = pyautogui.position()
-        moveMouse((getTRNV(x, x-5, x+5), getTRNV(y+41, y+36, y+46),))
         time.sleep(getSleepTRNV(.2))
+        x, y = pyautogui.position()
+        moveMouse((getTRNV(x, x - 5, x + 5), getTRNV(y + 41, y + 36, y + 46),))
+        time.sleep(getSleepTRNV(.1))
         pyautogui.click()
-        time.sleep(getSleepTRNV(.4))
-        client.eating = 'Pending'
-        moveOffScreen(client)
+        time.sleep(getSleepTRNV(.2))
+    if is_2hp and not lock.locked():
+        with lock:
+            moveOffScreen(client)
+            time.sleep(getSleepTRNV(.1))
+    client.eating = 'Pending'
 
 
 def login(client):  # Takes control of the mouse and keyboard to login to Runelite.
@@ -172,7 +209,9 @@ def login(client):  # Takes control of the mouse and keyboard to login to Runeli
     readPassword()
     client.update()
     client.setFocus()
-    current_color = getColor(coord_login_box_check)
+    window = win32ui.FindWindow(None, "RuneLite")
+    dc = window.GetWindowDC()
+    current_color = dc.GetPixel(*coord_login_box_check)
     if pixelMatchesColor(current_color, color_user_box_is_present, tolerance=10):
         print("Clicking \"Existing user\" box.")
         moveMouse(client.coord_existing_user)

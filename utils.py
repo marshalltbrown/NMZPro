@@ -2,13 +2,11 @@ import random
 
 import pyperclip
 import re
-import win32ui
 from vars import *
 from windmouse import WindMouse
 from pynput.mouse import Controller
 import time
 from math import floor
-from scipy.stats import truncnorm
 
 
 def getTRNV(mean, lower, upper):
@@ -34,8 +32,8 @@ def getTRNVCoord(rect):
     mean_y = (rect.top + rect.bottom) / 2
     x = getTRNV(mean_x, rect.left, rect.right)
     y = getTRNV(mean_y, rect.top, rect.bottom)
-    print(f"myrect: {mean_x}, {mean_y}")
-    print(f"myrect: {x}, {y}")
+    # print(f"myrect: {mean_x}, {mean_y}")
+    # print(f"myrect: {x}, {y}")
     return x, y
 
 
@@ -46,7 +44,7 @@ def moveMouse(end_coords):
     startX, startY = mouse.position
 
     points = myMouse.GeneratePoints(startX, startY, endX, endY)
-    print(f"NUMBER OF MOVEMENT POINTS: {len(points)}")
+    # print(f"NUMBER OF MOVEMENT POINTS: {len(points)}")
 
     # Move the mouse across the points
     if len(points) <= 20:
@@ -58,7 +56,7 @@ def moveMouse(end_coords):
         quarter_point = getTRNV(len(points) * .75, len(points) * .73, len(points) * .77)
         eight_point = getTRNV(len(points) * .925, len(points) * .915, len(points) * .935)
         fifteenth_point = getTRNV(len(points) * .9667, len(points) * .964, len(points) * .983)
-        print(f"Half: {half_point}, Quarter: {quarter_point}, Eighth: {eight_point}, Fifteenth: {fifteenth_point}")
+        #  print(f"Half: {half_point}, Quarter: {quarter_point}, Eighth: {eight_point}, Fifteenth: {fifteenth_point}")
         for i in range(len(points)):
             mouse.move(points[i][0] - mouse.position[0], points[i][1] - mouse.position[1])
             if i <= half_point:
@@ -89,23 +87,6 @@ def decimalColortoRGB(decimal):
     g = floor(decimal / 256) % 256
     b = floor(decimal / (256 * 256))
     return r, g, b
-
-
-def getColor(coords):
-    x, y = coords
-    window_title = re.compile
-    try:
-        window = win32ui.FindWindow(None, "Runelite - BigMTB")
-    except:
-        window = win32ui.FindWindow(None, "Runelite")
-    dc = window.GetWindowDC()
-    color = 1, 1, 1
-    try:
-        color = dc.GetPixel(x, y)
-    except:
-        print("Error in inventory thread.")
-    dc.DeleteDC()
-    return color
 
 
 def readPassword():  # Reads password from the password.txt then copies it to the clipboard.

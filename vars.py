@@ -18,6 +18,11 @@ color_range_potion = 35, 149, 195
 color_dwarven_rock = 100, 90, 62
 color_empty_potion = 98, 98, 102
 color_inv_empty = 71, 62, 52
+color_absorption_pot = 150, 166, 174
+color_strength_pot = 186, 182, 182
+color_white = 255, 255, 255
+color_green = 0, 255, 0
+
 
 settings = {
     'gravity': 9,

@@ -11,6 +11,12 @@ class runelite:
         self.tab = 'Unknown'
         self.health = 'Unknown'
         self.eating = 'Pending'
+        self.absorption = 'Pending'
+        self.buff = 'Pending'
+        self.flicking = False
+        self.win32ui_window = True
+        self.absorbs_remaining = True
+        self.buffs_remaining = True
         self.rect_alch = None
         self.rect_rapid_heal = None
         self.rect_rock_cake = None
@@ -80,9 +86,9 @@ class runelite:
         self.rect_styles_tab = rectangle(self.getAbsoluteCoord(527, 196), self.getAbsoluteCoord(562, 229))
         self.rect_levels_tab = rectangle(self.getAbsoluteCoord(564, 196), self.getAbsoluteCoord(599, 229))
         self.rect_quest_tab = rectangle(self.getAbsoluteCoord(601, 196), self.getAbsoluteCoord(634, 229))
-        self.rect_inventory_tab = rectangle(self.getAbsoluteCoord(638, 196), self.getAbsoluteCoord(670, 229))
+        self.rect_inventory_tab = rectangle(self.getAbsoluteCoord(632, 196), self.getAbsoluteCoord(658, 229))
         self.rect_gear_tab = rectangle(self.getAbsoluteCoord(675, 196), self.getAbsoluteCoord(710, 229))
-        self.rect_prayer_tab = rectangle(self.getAbsoluteCoord(712, 196), self.getAbsoluteCoord(747, 229))
+        self.rect_prayer_tab = rectangle(self.getAbsoluteCoord(698, 196), self.getAbsoluteCoord(724, 229))
         self.rect_magic_tab = rectangle(self.getAbsoluteCoord(749, 196), self.getAbsoluteCoord(784, 229))
 
 
