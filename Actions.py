@@ -79,8 +79,10 @@ def goToInventorySpot(client, string_dict, lock, inventory_table, item):
 def drinkBuff(client, string_dict, lock, inventory_table):
 
     client.buff = 'Drinking'
-
-    sleep_duration = round(getSleepTRNV(60))
+    if 'R' in client.training_style:
+        sleep_duration = round(getSleepTRNV(135))
+    else:
+        sleep_duration = round(getSleepTRNV(60))
     for timer in range(sleep_duration):
         string_dict['buff'].set(f"{timer}/{sleep_duration} Waiting to Drink.")
         time.sleep(1)
