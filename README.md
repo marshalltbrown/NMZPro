@@ -1,9 +1,22 @@
 # NMZPro
 Project with the goal of creating the perfect NMZ emulator.
 
-Note: Using python 3.7 is best for pywinauto features.
+Runelite NMZ plugin settings:
 
-8-22 Update #2: Added basic tab tracking. It tells you wif you are on the inventory tab or the prayer tab.
+• "Override NMZ Overlay" must be turned off.
 
-8-22 Update: To use login script create a file in the main directory called "password.txt". Paste only your
-password on the first line and save it.  
+Runelite widget settings:
+
+• There must be no widgets in the top left corner.
+
+• Potion buff info must be in the bottom left
+    
+• Under Runelite "Boosts Information", turn on "Use Relative Boosts"
+
+Required window settings:
+
+• Must use fixed - classic layout
+
+• Minimum size only (Plans to change this in the future)
+
+![img.png](img.png)

@@ -19,11 +19,12 @@ def reader(client, string_dict, inventory_table):
                     or pos[1] <= 207+client.rectangle.top:
                 readInventory(client, inventory_table, dc)
             client.inNMZ = checkNMZ(dc)
+            print(f"In NMZ: {client.inNMZ}")
             dc.DeleteDC()
         except:
             print("Window error.")
         client.absorbs_remaining = countPots(inventory_table, 'A')
-        client.buffs_remaining = countPots(inventory_table, 'S')
+        client.buffs_remaining = countPots(inventory_table, client.training_style)
         time.sleep(.3)
 
 

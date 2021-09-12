@@ -5,6 +5,7 @@ class runelite:
     def __init__(self):
 
         self.client = Application().connect(path=r"C:\Users\Marshall\AppData\Local\RuneLite")['RuneLite']
+        self.training_style = 'R'  # Change this to S (Strength pot) or R (range pot)
         self.client_width = None
         self.client_height = None
         self.rectangle = None

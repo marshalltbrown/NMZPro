@@ -46,7 +46,7 @@ def NMZ(client, string_dict, lock, inventory_table):
 
 
 def logout(client, lock):
-    time.sleep(getSleepTRNV(5))
+    time.sleep(getSleepTRNV(10))
     with lock:
         moveToTab(client, 'Logout')
         time.sleep(getSleepTRNV(.2))
@@ -90,7 +90,7 @@ def drinkBuff(client, string_dict, lock, inventory_table):
         string_dict['buff'].set("Drinking.")
         moveToTab(client, "Items")
         time.sleep(getSleepTRNV(1))
-        if not goToInventorySpot(client, string_dict, lock, inventory_table, "S"):
+        if not goToInventorySpot(client, string_dict, lock, inventory_table, client.training_style):
             client.buff = 'Pending'
             sys.exit()
         time.sleep(getSleepTRNV(.5))
