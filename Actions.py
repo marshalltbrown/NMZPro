@@ -1,3 +1,4 @@
+import sys
 import threading
 import win32ui
 import pyautogui
@@ -12,20 +13,27 @@ def NMZ(client, string_dict, lock, inventory_table):
     client.setFocus()
 
     while True:
-        if client.absorption == 'Pending':
-            if string_dict['absorption'].get() == '200+' or string_dict['absorption'].get() == '100+':
+        if not client.inNMZ:
+            logout(client, lock)
+            string_dict['status'].set("NMZ not found - Logged out.")
+            sys.exit()
+
+        if client.absorption == 'Pending' and client.absorbs_remaining:
+            if '200+' in string_dict['absorption'].get() or '100+' in string_dict['absorption'].get(): # modified instead of hard code from reader none left code
                 threading.Thread(target=drinkAbsorption,
                                  args=(client, string_dict, lock, inventory_table),
                                  daemon=True).start()
-        if client.buff == 'Pending':
-            if string_dict['buff'].get() == '<=9 remaining':
+
+        if client.buff == 'Pending' and client.buffs_remaining:
+            if '>=10 remaining' not in string_dict['buff'].get():
                 threading.Thread(target=drinkBuff,
                                  args=(client, string_dict, lock, inventory_table),
                                  daemon=True).start()
 
+
         # Check health and start rock cake thread if necessary.
         if client.eating == 'Pending':
-            if string_dict['health'].get() != '1 HP':
+            if string_dict['health'].get() == '? HP':
                 threading.Thread(target=eatRockCake,
                                  args=(client, string_dict, lock, inventory_table),
                                  daemon=True).start()
@@ -37,19 +45,35 @@ def NMZ(client, string_dict, lock, inventory_table):
         time.sleep(1)
 
 
+def logout(client, lock):
+    time.sleep(getSleepTRNV(5))
+    with lock:
+        moveToTab(client, 'Logout')
+        time.sleep(getSleepTRNV(.2))
+        moveMouse(getTRNVCoord(client.rect_logout_button))
+        time.sleep(getSleepTRNV(.1))
+        pyautogui.click()
+        time.sleep(getSleepTRNV(.1))
+        pyautogui.click()
+        moveOffScreen(client)
+
+
 def goToInventorySpot(client, string_dict, lock, inventory_table, item):
     row = 0
     column = 0
+    item_found = False
     while row <= 6:
         while column <= 3:
             if inventory_table[row][column].get() == item:
                 #print(f"Found {item} in inv ( {row}, {column} )")
                 moveMouse(getTRNVCoord(client.table_inventory_rects[row][column]))
+                item_found = True
                 row = 9
                 column = 9
             column += 1
         row += 1
         column = 0
+    return item_found
 
 
 def drinkBuff(client, string_dict, lock, inventory_table):
@@ -66,7 +90,9 @@ def drinkBuff(client, string_dict, lock, inventory_table):
         string_dict['buff'].set("Drinking.")
         moveToTab(client, "Items")
         time.sleep(getSleepTRNV(1))
-        goToInventorySpot(client, string_dict, lock, inventory_table, "S")
+        if not goToInventorySpot(client, string_dict, lock, inventory_table, "S"):
+            client.buff = 'Pending'
+            sys.exit()
         time.sleep(getSleepTRNV(.5))
         pyautogui.click()
         time.sleep(getSleepTRNV(.05))
@@ -92,7 +118,9 @@ def drinkAbsorption(client, string_dict, lock, inventory_table):
         string_dict['absorption'].set("Drinking.")
         moveToTab(client, "Items")
         time.sleep(getSleepTRNV(.3))
-        goToInventorySpot(client, string_dict, lock, inventory_table, "A")
+        if not goToInventorySpot(client, string_dict, lock, inventory_table, "A"):
+            client.absorption = 'Pending'
+            sys.exit()
         time.sleep(getSleepTRNV(.5))
         for i in range(round(getTRNV(14, 12, 16))):
             pyautogui.click()
@@ -109,7 +137,7 @@ def drinkAbsorption(client, string_dict, lock, inventory_table):
 def flickRapidHeal(client, string_dict, lock):
     client.flicking = True
     # Start waiting 1 minute before flicking rapid heal
-    sleep_duration = round(getSleepTRNV(52))
+    sleep_duration = round(getSleepTRNV(50))
     for timer in range(sleep_duration):
         string_dict['status'].set(f"{timer}/{sleep_duration - 1} Waiting to flick.")
         time.sleep(1)
@@ -157,13 +185,15 @@ def moveToTab(client, tab):  # Only call with movement lock.
     elif tab == 'Items':
         rect = client.rect_inventory_tab
         f_key = 'f2'
+    elif tab == 'Logout':
+        rect = client.rect_logout_tab
     if client.tab != tab:
         if random.randint(0, 1) == 2:  # Turned off F keys, need focus on runelite
             pyautogui.press(f_key)
             time.sleep(getSleepTRNV(.27))
         else:  # currently always false to this
             moveMouse(getTRNVCoord(rect))
-            time.sleep(getSleepTRNV(.2))
+            time.sleep(getSleepTRNV(.01))
             pyautogui.click()
 
 
@@ -178,17 +208,18 @@ def eatRockCake(client, string_dict, lock, inventory_table):
     string_dict['health'].set("Guzzling rock cake now.")
 
     with lock:
-
         window = win32ui.FindWindow(None, "RuneLite")
         dc = window.GetWindowDC()
-        is_2hp = False
+        hp_is2 = False
         if pixelMatchesColor(dc.GetPixel(533, 86), color_health_is_present, tolerance=10) \
                 and pixelMatchesColor(dc.GetPixel(537, 92), color_health_is_present, tolerance=10):
-            is_2hp = True
+            hp_is2 = True
 
         moveToTab(client, 'Items')
         time.sleep(getSleepTRNV(.1))
-        goToInventorySpot(client, string_dict, lock, inventory_table, '(*)')
+        if not goToInventorySpot(client, string_dict, lock, inventory_table, '(*)'):
+            client.eating = 'Pending'
+            sys.exit()
         time.sleep(getSleepTRNV(.1))
         pyautogui.rightClick()
         time.sleep(getSleepTRNV(.2))
@@ -197,8 +228,10 @@ def eatRockCake(client, string_dict, lock, inventory_table):
         time.sleep(getSleepTRNV(.1))
         pyautogui.click()
         time.sleep(getSleepTRNV(.2))
-    if is_2hp and not lock.locked():
+
+    if hp_is2 and not lock.locked():
         with lock:
+            string_dict['health'].set('1 HP')
             moveOffScreen(client)
             time.sleep(getSleepTRNV(.1))
     client.eating = 'Pending'

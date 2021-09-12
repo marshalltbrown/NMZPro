@@ -13,7 +13,7 @@ def startListener():  # Generates thread on the referenced function.
 
 
 def runLogin():  # Copies password from file and logs in to Runelite.
-    with lock['status']:
+    with lock:
         string_vars['status'].set('Logging in')
         login(client)
         string_vars['status'].set('Idle')
@@ -42,6 +42,7 @@ print(f'Thread initialized in main: {threading.get_ident()}')
 # --Threading lock
 lock = threading.Lock()
 
+# --Thread safe strings that are used to update labels.
 string_vars = {'status': tk.StringVar(),
                'health': tk.StringVar(),
                'absorption': tk.StringVar(),
@@ -63,6 +64,7 @@ buff_label = tk.Label(textvariable=string_vars['buff']).grid(row=5, column=2)
 inventory_label = tk.Label(textvariable=string_vars['inventory']).grid(row=6, column=2, pady=20)
 
 inventory_table = [{}, {}, {}, {}, {}, {}, {}]
+
 for row in range(7):
     for column in range(4):
         inventory_table[row][column] = tk.StringVar()
@@ -74,19 +76,16 @@ for row in range(7):
             l.grid(row=row + 7, column=column, sticky=NSEW)
 
 
-# print(f"My data: {str(inventory_table[0])}")
-# print(f"My data: {str(inventory_table[1])}")
-# print(f"My data: {str(inventory_table[2])}")
-# print(f"My data: {str(inventory_table[3])}")
-
-
 login_button = tk.Button(text='Login', command=runLogin)
 login_button.grid(row=1, column=1)
 
-alch_button = tk.Button(text='Alch', command=startListener)
+alch_button = tk.Button(text='Alch', command=runAlch)
 alch_button.grid(row=1, column=2)
 
 nmz_button = tk.Button(text='NMZ', command=runNMZ)
 nmz_button.grid(row=1, column=3)
+
+read_button = tk.Button(text='Read', command=startListener)
+read_button.grid(row=1, column=4)
 
 gui.mainloop()  # Accessible code above this point.

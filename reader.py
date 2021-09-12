@@ -1,8 +1,10 @@
 import win32ui
 from utils import *
+from pynput.mouse import Controller
 
 
 def reader(client, string_dict, inventory_table):
+    mouse = Controller()
     while True:
         window = win32ui.FindWindow(None, "RuneLite")
         dc = window.GetWindowDC()
@@ -11,13 +13,25 @@ def reader(client, string_dict, inventory_table):
             readBuffPot(client, string_dict, dc)
             readAbsorbPot(client, string_dict, dc)
             readHealth(client, string_dict, dc)
-            readInventory(client, inventory_table, dc)
+            pos = mouse.position
+            if pos[0] >= client.rectangle.right or (231 + client.rectangle.top <= pos[1] <= 239 + client.rectangle.top)\
+                    or pos[1] <= 207+client.rectangle.top:
+                readInventory(client, inventory_table, dc)
+            client.inNMZ = checkNMZ(dc)
             dc.DeleteDC()
         except:
             print("Window error.")
         client.absorbs_remaining = countPots(inventory_table, 'A')
         client.buffs_remaining = countPots(inventory_table, 'S')
         time.sleep(.3)
+
+
+def checkNMZ(dc):
+    if pixelMatchesColor(dc.GetPixel(40, 80), (144, 136, 123,), tolerance=5)\
+            and pixelMatchesColor(dc.GetPixel(47, 75), (132, 116, 49,), tolerance=5):
+        return True
+    else:
+        return False
 
 
 def countPots(inventory_table, pot):
@@ -117,4 +131,5 @@ def readHealth(client, string_dict, dc):
                 and not pixelMatchesColor(dc.GetPixel(*coord_health_false_check), color_health_is_present, tolerance=10):
             string_dict['health'].set('1 HP')
         else:
-            string_dict['health'].set('? hp')
+            string_dict['health'].set('? HP')
+
