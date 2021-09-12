@@ -6,6 +6,7 @@ from pynput.mouse import Controller
 def reader(client, string_dict, inventory_table):
     mouse = Controller()
     while True:
+        client.update()
         window = win32ui.FindWindow(None, "RuneLite")
         dc = window.GetWindowDC()
         try:
