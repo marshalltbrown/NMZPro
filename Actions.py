@@ -169,7 +169,7 @@ def flickRapidHeal(client, string_dict, lock):
 
         # Flick prayer.
         pyautogui.click()
-        time.sleep(getSleepTRNV(.4))
+        time.sleep(getSleepTRNV(.8))
         pyautogui.click()
 
         # Move off screen
