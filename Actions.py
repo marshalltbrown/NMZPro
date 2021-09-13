@@ -79,10 +79,7 @@ def goToInventorySpot(client, string_dict, lock, inventory_table, item):
 def drinkBuff(client, string_dict, lock, inventory_table):
 
     client.buff = 'Drinking'
-    if 'R' in client.training_style:
-        sleep_duration = round(getSleepTRNV(135))
-    else:
-        sleep_duration = round(getSleepTRNV(60))
+    sleep_duration = round(getSleepTRNV(60))
     for timer in range(sleep_duration):
         string_dict['buff'].set(f"{timer}/{sleep_duration} Waiting to Drink.")
         time.sleep(1)
@@ -147,18 +144,22 @@ def flickRapidHeal(client, string_dict, lock):
     string_dict['status'].set("Flicking Rapid.")
 
     with lock:
-        # Go to prayer tab if necessary
-        moveToTab(client, 'Prayer')
-        time.sleep(getSleepTRNV(.15))
+        # Small chance to go directly to prayer tab
+        if random.randrange(1, 6) == 1:
+            # Set rapid heal rect
+            coords = getTRNVCoord(client.rect_rapid_heal)
+            # Go to prayer tab if necessary
+            moveToTab(client, 'Prayer')
+            time.sleep(getSleepTRNV(.15))
+        else:
+            # Set quick pray rect.
+            coords = getTRNVCoord(client.rect_quick_pray)
 
-        # Set Rapid Heal coords.
-        coords = getTRNVCoord(client.rect_rapid_heal)
-
-        # Move to Rapid Heal coords.
+        # Move to prayer spot.
         moveMouse(coords)
         time.sleep(getSleepTRNV(.15))
 
-        # Flick rapid heal.
+        # Flick prayer.
         pyautogui.click()
         time.sleep(getSleepTRNV(.4))
         pyautogui.click()

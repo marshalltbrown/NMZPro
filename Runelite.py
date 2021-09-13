@@ -32,6 +32,7 @@ class runelite:
         self.rect_magic_tab = None
         self.rect_logout_tab = None
         self.rect_logout_button = None
+        self.rect_quick_pray = None
         self.inNMZ = True
         self.table_inventory_rects = [{}, {}, {}, {}, {}, {}, {}]
 
@@ -96,6 +97,7 @@ class runelite:
         self.rect_magic_tab = rectangle(self.getAbsoluteCoord(749, 196), self.getAbsoluteCoord(784, 229))
         self.rect_logout_tab = rectangle(self.getAbsoluteCoord(634, 497), self.getAbsoluteCoord(660, 523))
         self.rect_logout_button = rectangle(self.getAbsoluteCoord(578, 445), self.getAbsoluteCoord(708, 469))
+        self.rect_quick_pray = rectangle(self.getAbsoluteCoord(523, 107), self.getAbsoluteCoord(571, 132))
 
 
 class rectangle:

@@ -15,8 +15,7 @@ def reader(client, string_dict, inventory_table):
             readAbsorbPot(client, string_dict, dc)
             readHealth(client, string_dict, dc)
             pos = mouse.position
-            if pos[0] >= client.rectangle.right or (231 + client.rectangle.top <= pos[1] <= 239 + client.rectangle.top)\
-                    or pos[1] <= 207+client.rectangle.top:
+            if pos[0] >= client.rectangle.right or pos[1] <= 207+client.rectangle.top:
                 readInventory(client, inventory_table, dc)
             client.inNMZ = checkNMZ(dc)
             dc.DeleteDC()
