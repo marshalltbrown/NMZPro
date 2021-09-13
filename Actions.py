@@ -153,7 +153,7 @@ def flickRapidHeal(client, string_dict, lock):
 
     with lock:
         # Small chance to go directly to prayer tab
-        if random.randrange(1, 6) == 1:
+        if random.randrange(1, 10) == 1:
             # Set rapid heal rect
             coords = getTRNVCoord(client.rect_rapid_heal)
             # Go to prayer tab if necessary
