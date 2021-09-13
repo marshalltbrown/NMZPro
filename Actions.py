@@ -127,7 +127,7 @@ def drinkAbsorption(client, string_dict, lock, inventory_table):
             client.absorption = 'Pending'
             sys.exit()
         time.sleep(getSleepTRNV(.5))
-        for i in range(round(getTRNV(14, 12, 16))):
+        for i in range(round(getTRNV(15, 13, 17))):
             pyautogui.click()
             time.sleep(getSleepTRNV(.05))
     if not lock.locked():
