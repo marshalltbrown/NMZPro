@@ -7,13 +7,15 @@ from utils import *
 
 
 def NMZ(client, string_dict, lock, inventory_table):
-
+    client.nmz_running = True
     string_dict['status'].set('NMZ Started.')
 
     client.setFocus()
 
     while True:
         if not client.inNMZ:
+            client.nmz_running = False
+            time.sleep(getSleepTRNV(3))
             logout(client, lock)
             string_dict['status'].set("NMZ not found - Logged out.")
             sys.exit()
@@ -81,6 +83,8 @@ def drinkBuff(client, string_dict, lock, inventory_table):
     client.buff = 'Drinking'
     sleep_duration = round(getSleepTRNV(60))
     for timer in range(sleep_duration):
+        if not client.nmz_running:
+            sys.exit()
         string_dict['buff'].set(f"{timer}/{sleep_duration} Waiting to Drink.")
         time.sleep(1)
 
@@ -109,6 +113,8 @@ def drinkAbsorption(client, string_dict, lock, inventory_table):
 
     sleep_duration = round(getSleepTRNV(70))
     for timer in range(sleep_duration):
+        if not client.nmz_running:
+            sys.exit()
         string_dict['absorption'].set(f"{timer}/{sleep_duration} Waiting to Drink.")
         time.sleep(1)
 
@@ -138,6 +144,8 @@ def flickRapidHeal(client, string_dict, lock):
     # Start waiting 1 minute before flicking rapid heal
     sleep_duration = round(getSleepTRNV(50))
     for timer in range(sleep_duration):
+        if not client.nmz_running:
+            sys.exit()
         string_dict['status'].set(f"{timer}/{sleep_duration - 1} Waiting to flick.")
         time.sleep(1)
 
@@ -205,6 +213,8 @@ def eatRockCake(client, string_dict, lock, inventory_table):
     # Wait for timer to eat rock cake.
     sleep_duration = round(getSleepTRNV(.1))
     for timer in range(sleep_duration):
+        if not client.nmz_running:
+            sys.exit()
         string_dict['health'].set(f"{timer}/{sleep_duration} Waiting to guzzle rock cake.")
         time.sleep(1)
 

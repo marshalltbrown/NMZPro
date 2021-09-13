@@ -14,6 +14,7 @@ class runelite:
         self.eating = 'Pending'
         self.absorption = 'Pending'
         self.buff = 'Pending'
+        self.nmz_running = False
         self.flicking = False
         self.win32ui_window = True
         self.absorbs_remaining = True
