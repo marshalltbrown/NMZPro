@@ -26,7 +26,7 @@ def reader(client, string_dict, inventory_table):
         time.sleep(.3)
 
 
-def checkNMZ(dc):
+def checkNMZ(dc):  # Checks 2 pixels on a Runelite display absorption pot while in NMZ (top-left of screen)
     if pixelMatchesColor(dc.GetPixel(40, 80), (144, 136, 123,), tolerance=5)\
             and pixelMatchesColor(dc.GetPixel(47, 75), (132, 116, 49,), tolerance=5):
         return True
@@ -68,7 +68,7 @@ def readInventory(client, inventory_table, dc):
                 elif (itemCheck(color_array, color_inv_empty, 15)) == 4:
                     inventory_table[row][column].set('-')
                 else:
-                    inventory_table[row][column].set('  ?  ')
+                    inventory_table[row][column].set('?')
                 x += 42
             one_dose += 36
 

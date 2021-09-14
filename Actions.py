@@ -1,5 +1,7 @@
 import sys
 import threading
+import tkinter
+
 import win32ui
 import pyautogui
 import keyboard
@@ -142,7 +144,7 @@ def drinkAbsorption(client, string_dict, lock, inventory_table):
 def flickRapidHeal(client, string_dict, lock):
     client.flicking = True
     # Start waiting 1 minute before flicking rapid heal
-    sleep_duration = round(getSleepTRNV(50))
+    sleep_duration = round(getSleepTRNV(54))
     for timer in range(sleep_duration):
         if not client.nmz_running:
             sys.exit()
@@ -250,8 +252,8 @@ def eatRockCake(client, string_dict, lock, inventory_table):
     client.eating = 'Pending'
 
 
-def login(client):  # Takes control of the mouse and keyboard to login to Runelite.
-    print('Beginning login script.')
+def login(client, strings):  # Takes control of the mouse and keyboard to login to Runelite.
+    #postStatus(strings, 'Beginning login script.')
     readPassword()
     client.update()
     client.setFocus()
@@ -259,7 +261,7 @@ def login(client):  # Takes control of the mouse and keyboard to login to Runeli
     dc = window.GetWindowDC()
     current_color = dc.GetPixel(*coord_login_box_check)
     if pixelMatchesColor(current_color, color_user_box_is_present, tolerance=10):
-        print("Clicking \"Existing user\" box.")
+        #postStatus(strings, "Clicking \"Existing user\" box.")
         moveMouse(client.coord_existing_user)
         time.sleep(getSleepTRNV(.4))
         pyautogui.click()
@@ -271,7 +273,7 @@ def login(client):  # Takes control of the mouse and keyboard to login to Runeli
     pyautogui.keyDown('ctrl')
     pyautogui.press('v')
     pyautogui.keyUp('ctrl')
-    print('Logged in.')
+    #postStatus(strings, 'Logged in.')
 
 
 def autoAlch(client, string_var, lock):
