@@ -10,16 +10,16 @@ from utils import *
 
 def NMZ(client, string_dict, lock, inventory_table):
     client.nmz_running = True
-    string_dict['status'].set('NMZ Started.')
+    postStatus(string_dict, "NMZ Script Started.")
 
     client.setFocus()
 
     while True:
         if not client.inNMZ:
+            postStatus(string_dict, "NMZ not found.")
             client.nmz_running = False
             time.sleep(getSleepTRNV(3))
-            logout(client, lock)
-            string_dict['status'].set("NMZ not found - Logged out.")
+            logout(client,string_dict, lock)
             sys.exit()
 
         if client.absorption == 'Pending' and client.absorbs_remaining:
@@ -33,7 +33,6 @@ def NMZ(client, string_dict, lock, inventory_table):
                 threading.Thread(target=drinkBuff,
                                  args=(client, string_dict, lock, inventory_table),
                                  daemon=True).start()
-
 
         # Check health and start rock cake thread if necessary.
         if client.eating == 'Pending':
@@ -49,9 +48,19 @@ def NMZ(client, string_dict, lock, inventory_table):
         time.sleep(1)
 
 
-def logout(client, lock):
+def postStatus(strings, message):
+    box = strings['box']
+    fully_scrolled_down = box.yview()[1] == 1.0
+
+    box.insert('end', message + "\n")
+    if fully_scrolled_down:
+        box.see("end")
+
+
+def logout(client, strings, lock):
     time.sleep(getSleepTRNV(10))
     with lock:
+        postStatus(strings, "Logging out.")
         moveToTab(client, 'Logout')
         time.sleep(getSleepTRNV(.2))
         moveMouse(getTRNVCoord(client.rect_logout_button))
@@ -93,6 +102,7 @@ def drinkBuff(client, string_dict, lock, inventory_table):
     string_dict['buff'].set("Waiting on other movement.")
     with lock:
         string_dict['buff'].set("Drinking.")
+        postStatus(string_dict, "Drinking buff pot.")
         moveToTab(client, "Items")
         time.sleep(getSleepTRNV(1))
         if not goToInventorySpot(client, string_dict, lock, inventory_table, client.training_style):
@@ -123,6 +133,7 @@ def drinkAbsorption(client, string_dict, lock, inventory_table):
     string_dict['absorption'].set("Waiting.")
     with lock:
         string_dict['absorption'].set("Drinking.")
+        postStatus(string_dict, "Drinking absorption pot.")
         moveToTab(client, "Items")
         time.sleep(getSleepTRNV(.3))
         if not goToInventorySpot(client, string_dict, lock, inventory_table, "A"):
@@ -151,11 +162,10 @@ def flickRapidHeal(client, string_dict, lock):
         string_dict['status'].set(f"{timer}/{sleep_duration - 1} Waiting to flick.")
         time.sleep(1)
 
-    string_dict['status'].set("Flicking Rapid.")
-
     with lock:
         # Small chance to go directly to prayer tab
         if random.randrange(1, 10) == 1:
+            postStatus(string_dict, "Moving to prayer tab to flick. (1/10 odds)")
             # Set rapid heal rect
             coords = getTRNVCoord(client.rect_rapid_heal)
             # Go to prayer tab if necessary
@@ -165,6 +175,7 @@ def flickRapidHeal(client, string_dict, lock):
             # Set quick pray rect.
             coords = getTRNVCoord(client.rect_quick_pray)
 
+        postStatus(string_dict, "Flicking rapid heal now.")
         # Move to prayer spot.
         moveMouse(coords)
         time.sleep(getSleepTRNV(.15))
@@ -223,6 +234,7 @@ def eatRockCake(client, string_dict, lock, inventory_table):
     string_dict['health'].set("Guzzling rock cake now.")
 
     with lock:
+        postStatus(string_dict, "Guzzling rock cake.")
         window = win32ui.FindWindow(None, "RuneLite")
         dc = window.GetWindowDC()
         hp_is2 = False
@@ -253,7 +265,7 @@ def eatRockCake(client, string_dict, lock, inventory_table):
 
 
 def login(client, strings):  # Takes control of the mouse and keyboard to login to Runelite.
-    #postStatus(strings, 'Beginning login script.')
+    postStatus(strings, 'Beginning login script.')
     readPassword()
     client.update()
     client.setFocus()
@@ -261,7 +273,7 @@ def login(client, strings):  # Takes control of the mouse and keyboard to login 
     dc = window.GetWindowDC()
     current_color = dc.GetPixel(*coord_login_box_check)
     if pixelMatchesColor(current_color, color_user_box_is_present, tolerance=10):
-        #postStatus(strings, "Clicking \"Existing user\" box.")
+        postStatus(strings, "Clicking \"Existing user\" box.")
         moveMouse(client.coord_existing_user)
         time.sleep(getSleepTRNV(.4))
         pyautogui.click()
@@ -270,10 +282,11 @@ def login(client, strings):  # Takes control of the mouse and keyboard to login 
     time.sleep(getSleepTRNV(.2))
     pyautogui.click()
     time.sleep(getSleepTRNV(.2))
+    postStatus(strings, 'Pasting saved password.')
     pyautogui.keyDown('ctrl')
     pyautogui.press('v')
     pyautogui.keyUp('ctrl')
-    #postStatus(strings, 'Logged in.')
+    postStatus(strings, 'Ready to log in.')
 
 
 def autoAlch(client, string_var, lock):
@@ -315,7 +328,6 @@ def autoAlch(client, string_var, lock):
             newx = random.normalvariate(((clickrectangle[2] - clickrectangle[0]) / 2) + clickrectangle[0], 1.848448998)
             newy = random.normalvariate(((clickrectangle[3] - clickrectangle[1]) / 2) + clickrectangle[1], 1.599684449)
             print("{} , {}".format(newx, newy))
-            # pyautogui.moveTo(random.randrange(clickrectangle[0], clickrectangle[2]),random.randrange(clickrectangle[1], clickrectangle[3]), 1, pyautogui.easeOutQuad)
             pyautogui.moveTo(newx, newy, 1, pyautogui.easeOutQuad)
             print("Adjusting click location.")
         if random.randrange(1, 10) == 1:

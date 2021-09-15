@@ -18,13 +18,13 @@ def startListener():  # Generates thread on the referenced function.
 def runLogin():  # Copies password from file and logs in to Runelite.
     with lock:
         string_vars['status'].set('Logging in')
-        login(client, string_vars)
+        threading.Thread(target=login, args=(client, string_vars,), daemon=True).start()
         string_vars['status'].set('Idle')
 
 
 def runAlch():
     string_vars['status'].set('Setting up auto-alch.')
-    autoAlch(client, string_vars, lock)
+    threading.Thread(target=autoAlch, args=(client, string_vars, lock,), daemon=True).start()
 
 
 def runNMZ():
@@ -32,20 +32,11 @@ def runNMZ():
     startListener()
     threading.Thread(target=NMZ, args=(client, string_vars, lock, inventory_table,), daemon=True).start()
 
-
-def postNote(event, message="?"):
-    box = string_vars['box']
-    fully_scrolled_down = box.yview()[1] == 1.0
-
-    box.insert('end', message + "\n")
-    if fully_scrolled_down:
-        box.see("end")
 # --GUI and main thread set-up.
 client = runelite()  # Object from Runelite.py class. Used for client location data.
 gui = Tk()
 gui.title("NMZPro")
 gui.geometry("590x475")
-gui.bind('<<Note>>', lambda event, data: postNote(event, data))
 print(f'Thread initialized in main: {threading.get_ident()}')
 
 
@@ -103,13 +94,13 @@ for row in range(7):
 Separator(text_frame).grid(row=4, column=0, columnspan=2, sticky='ew', pady=15)
 Separator(var_frame).grid(row=4, column=0, columnspan=2, sticky='ew', pady=15)
 
-login_button = Button(text_frame, text='Login', width=7, command=runLogin)
+login_button = Button(text_frame, text='Login', width=7, command=lambda: runLogin())
 login_button.grid(row=5, column=0, pady=(10, 0))
 
-alch_button = Button(text_frame, text='Alch', width=7, command=runAlch)
+alch_button = Button(text_frame, text='Alch', width=7, command=lambda: runAlch())
 alch_button.grid(row=6, column=0, pady=13)
 
-nmz_button = Button(text_frame, text='NMZ', width=7, command=runNMZ)
+nmz_button = Button(text_frame, text='NMZ', width=7, command=lambda: runNMZ())
 nmz_button.grid(row=7, column=0)
 
 string_vars['box'] = st.ScrolledText(gui,
@@ -123,5 +114,6 @@ string_vars['box'] = st.ScrolledText(gui,
 string_vars['box'].grid(row=2, column=0, columnspan=4, padx=(10, 0), pady=(20, 0), sticky='nsew')
 string_vars['box'].insert('end', "Program intiated.")
 string_vars['box'].configure(state='normal')
-#gui.event_generate('<<Note>>', data=('Big Mama!',))
+
+
 gui.mainloop()  # Accessible code above this point.
