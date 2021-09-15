@@ -112,7 +112,7 @@ string_vars['box'] = st.ScrolledText(gui,
                          font=("Arial", 12))
 
 string_vars['box'].grid(row=2, column=0, columnspan=4, padx=(10, 0), pady=(20, 0), sticky='nsew')
-string_vars['box'].insert('end', "Program intiated.")
+string_vars['box'].insert('end', "Program intiated.\n")
 string_vars['box'].configure(state='normal')
 
 

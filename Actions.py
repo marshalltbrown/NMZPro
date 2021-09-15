@@ -78,7 +78,6 @@ def goToInventorySpot(client, string_dict, lock, inventory_table, item):
     while row <= 6:
         while column <= 3:
             if inventory_table[row][column].get() == item:
-                #print(f"Found {item} in inv ( {row}, {column} )")
                 moveMouse(getTRNVCoord(client.table_inventory_rects[row][column]))
                 item_found = True
                 row = 9
@@ -96,7 +95,7 @@ def drinkBuff(client, string_dict, lock, inventory_table):
     for timer in range(sleep_duration):
         if not client.nmz_running:
             sys.exit()
-        string_dict['buff'].set(f"{timer}/{sleep_duration} Waiting to Drink.")
+        string_dict['buff'].set(f"{timer}/{sleep_duration} Waiting to drink.")
         time.sleep(1)
 
     string_dict['buff'].set("Waiting on other movement.")
@@ -127,7 +126,7 @@ def drinkAbsorption(client, string_dict, lock, inventory_table):
     for timer in range(sleep_duration):
         if not client.nmz_running:
             sys.exit()
-        string_dict['absorption'].set(f"{timer}/{sleep_duration} Waiting to Drink.")
+        string_dict['absorption'].set(f"{timer}/{sleep_duration} Waiting to drink.")
         time.sleep(1)
 
     string_dict['absorption'].set("Waiting.")
@@ -154,7 +153,7 @@ def drinkAbsorption(client, string_dict, lock, inventory_table):
 
 def flickRapidHeal(client, string_dict, lock):
     client.flicking = True
-    # Start waiting 1 minute before flicking rapid heal
+    # Start waiting ~1 minute before flicking rapid heal
     sleep_duration = round(getSleepTRNV(54))
     for timer in range(sleep_duration):
         if not client.nmz_running:
