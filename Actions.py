@@ -154,7 +154,7 @@ def drinkAbsorption(client, string_dict, lock, inventory_table):
 def flickRapidHeal(client, string_dict, lock):
     client.flicking = True
     # Start waiting ~1 minute before flicking rapid heal
-    sleep_duration = round(getSleepTRNV(54))
+    sleep_duration = round(getSleepTRNV(52))
     for timer in range(sleep_duration):
         if not client.nmz_running:
             sys.exit()
