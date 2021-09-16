@@ -1,10 +1,10 @@
 import sys
 import threading
-import tkinter
 
-import win32ui
-import pyautogui
 import keyboard
+import pyautogui
+import win32ui
+
 from utils import *
 
 
@@ -19,7 +19,7 @@ def NMZ(client, string_dict, lock, inventory_table):
             postStatus(string_dict, "NMZ not found.")
             client.nmz_running = False
             time.sleep(getSleepTRNV(3))
-            logout(client,string_dict, lock)
+            logout(client, string_dict, lock)
             sys.exit()
 
         if client.absorption == 'Pending' and client.absorbs_remaining:
@@ -78,7 +78,7 @@ def goToInventorySpot(client, string_dict, lock, inventory_table, item):
     while row <= 6:
         while column <= 3:
             if inventory_table[row][column].get() == item:
-                moveMouse(getTRNVCoord(client.table_inventory_rects[row][column]))
+                moveMouse(getTRNVCoord(client.inventory[row][column].rect))
                 item_found = True
                 row = 9
                 column = 9

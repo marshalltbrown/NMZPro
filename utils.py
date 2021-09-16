@@ -1,12 +1,12 @@
 import random
-
-import pyperclip
-import re
-from vars import *
-from windmouse import WindMouse
-from pynput.mouse import Controller
 import time
 from math import floor
+
+import pyperclip
+from pynput.mouse import Controller
+
+from vars import *
+from windmouse import WindMouse
 
 
 def getTRNV(mean, lower, upper):

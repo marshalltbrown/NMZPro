@@ -1,12 +1,10 @@
-import threading
-import time
-import tkinter
-from tkinter import *
 import tkinter.scrolledtext as st
+from tkinter import *
 from tkinter.ttk import Separator
 
 from Actions import *
 from Runelite import runelite
+from Controllers import admin
 from reader import reader
 
 
@@ -33,7 +31,6 @@ def runNMZ():
     threading.Thread(target=NMZ, args=(client, string_vars, lock, inventory_table,), daemon=True).start()
 
 # --GUI and main thread set-up.
-client = runelite()  # Object from Runelite.py class. Used for client location data.
 gui = Tk()
 gui.title("NMZPro")
 gui.geometry("590x475")
@@ -117,8 +114,12 @@ string_vars['box'] = st.ScrolledText(gui,
                          font=("Arial", 12))
 
 string_vars['box'].grid(row=4, column=0, columnspan=4, padx=(10, 0), pady=(20, 0), sticky='nsew')
-string_vars['box'].insert('end', "Program intiated.\n")
+string_vars['box'].insert('end', "Program initiated.\n")
 string_vars['box'].configure(state='normal')
 
+try:
+    client = runelite()  # Object from Runelite.py class. Used for client data.
+except:
+    string_vars['box'].insert('end', "Runelite not found. Restart script with Runelite open.\n")
 
 gui.mainloop()  # Accessible code above this point.

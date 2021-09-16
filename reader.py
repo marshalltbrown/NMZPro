@@ -1,6 +1,7 @@
 import win32ui
-from utils import *
 from pynput.mouse import Controller
+
+from utils import *
 
 
 def reader(client, string_dict, inventory_table):
