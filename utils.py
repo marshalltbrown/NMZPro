@@ -1,12 +1,12 @@
 import random
-
-import pyperclip
-import re
-from vars import *
-from windmouse import WindMouse
-from pynput.mouse import Controller
 import time
 from math import floor
+
+import pyperclip
+from pynput.mouse import Controller
+
+from vars import *
+from windmouse import WindMouse
 
 
 def getTRNV(mean, lower, upper):
@@ -64,9 +64,9 @@ def moveMouse(end_coords):
             elif i <= quarter_point:
                 time.sleep(getSleepTRNV(.015))
             elif i <= eight_point:
-                time.sleep(getSleepTRNV(.03))
+                time.sleep(getSleepTRNV(.031))
             elif i <= fifteenth_point:
-                time.sleep(getSleepTRNV(.04))
+                time.sleep(getSleepTRNV(.041))
 
 
 def itemCheck(colors, sample, tolerance):
