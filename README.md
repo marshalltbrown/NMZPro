@@ -13,6 +13,8 @@ Runelite widget settings:
     
 • Under Runelite "Boosts Information", turn on "Use Relative Boosts"
 
+• Turn ammo plugin off. It obstructs the buff timer. 
+
 Required window settings:
 
 • Must use fixed - classic layout

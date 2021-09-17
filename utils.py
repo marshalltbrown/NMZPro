@@ -64,9 +64,9 @@ def moveMouse(end_coords):
             elif i <= quarter_point:
                 time.sleep(getSleepTRNV(.015))
             elif i <= eight_point:
-                time.sleep(getSleepTRNV(.03))
+                time.sleep(getSleepTRNV(.031))
             elif i <= fifteenth_point:
-                time.sleep(getSleepTRNV(.04))
+                time.sleep(getSleepTRNV(.041))
 
 
 def itemCheck(colors, sample, tolerance):

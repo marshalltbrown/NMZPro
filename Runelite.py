@@ -58,17 +58,9 @@ class runelite:
     def init_inventory(self):
         # 30 px wide then a 12px usable gap between boxes 42 total
         inventory = [[None for row in range(4)] for column in range(7)]
-        top = 244
-        bottom = 267
-        for row in range(7):
-            left = 568
-            right = 597
-            for column in range(4):
-                inventory[row][column] = inv_slot((left, top,), (right, bottom,), self.offset)
-                left += 42
-                right += 42
-            top += 36
-            bottom += 36
+        for row, t_b in enumerate(zip(range(244, 496, 36), range(267, 519, 36))):
+            for column, l_r in enumerate(zip(range(568, 736, 42), range(597, 765, 42))):
+                inventory[row][column] = inv_slot((l_r[0], t_b[0],), (l_r[1], t_b[1],), self.offset)
         return inventory
 
     def update_rectangles(self, offset):
@@ -85,7 +77,6 @@ class runelite:
         self.rect_quick_pray = rectangle((523, 107,), (571, 132,), offset)
         self.rect_alch = rectangle((708, 349,), (723, 365,), offset)
         self.rect_rapid_heal = rectangle((706, 281,), (733, 307,), offset)
-        self.rect_rock_cake = rectangle((571, 244,), (594, 267,), offset)
 
         self.coord_login_entry = (350+offset[0], 289+offset[1],)
         self.coord_existing_user = (395+offset[0], 315+offset[1],)
@@ -99,7 +90,7 @@ class inv_slot:
         self.contents = '?'
 
     def set_rect(self, offset):
-        return rectangle(self.tl, self.br, offset)
+        self.rect = rectangle(self.tl, self.br, offset)
 
 
 class rectangle:

@@ -10,8 +10,6 @@ from utils import *
 
 def NMZ(client, string_dict, lock, inventory_table):
     client.nmz_running = True
-    postStatus(string_dict, "NMZ Script Started.")
-
     client.setFocus()
 
     while True:
@@ -77,7 +75,7 @@ def goToInventorySpot(client, string_dict, lock, inventory_table, item):
     item_found = False
     while row <= 6:
         while column <= 3:
-            if inventory_table[row][column].get() == item:
+            if item in inventory_table[row][column].get():
                 moveMouse(getTRNVCoord(client.inventory[row][column].rect))
                 item_found = True
                 row = 9

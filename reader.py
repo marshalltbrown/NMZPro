@@ -1,14 +1,17 @@
-import win32ui
-from pynput.mouse import Controller
+import threading
 
+import win32ui
 from utils import *
 
 
 def reader(client, string_dict, inventory_table):
     mouse = Controller()
+    client.update()
+    window = win32ui.FindWindow(None, "RuneLite")
+    threading.Thread(target=checkMovement,
+                     args=(client, window),
+                     daemon=True).start()
     while True:
-        client.update()
-        window = win32ui.FindWindow(None, "RuneLite")
         dc = window.GetWindowDC()
         try:
             readTab(client, string_dict, dc)
@@ -21,15 +24,24 @@ def reader(client, string_dict, inventory_table):
             client.inNMZ = checkNMZ(dc)
             dc.DeleteDC()
         except:
-            print("Window error.")
+            continue
         client.absorbs_remaining = countPots(inventory_table, 'A')
         client.buffs_remaining = countPots(inventory_table, client.training_style)
         time.sleep(.3)
 
 
+def checkMovement(client, window):
+    while True:
+        r = window.GetWindowRect()
+        new_offset = (r[0], r[1],)
+        if new_offset != client.offset:
+            client.update()
+        time.sleep(1)
+
+
 def checkNMZ(dc):  # Checks 2 pixels on a Runelite display absorption pot while in NMZ (top-left of screen)
-    if pixelMatchesColor(dc.GetPixel(40, 80), (144, 136, 123,), tolerance=5)\
-            and pixelMatchesColor(dc.GetPixel(47, 75), (132, 116, 49,), tolerance=5):
+    if pixelMatchesColor(dc.GetPixel(40, 80), (144, 136, 123,), tolerance=10)\
+            and pixelMatchesColor(dc.GetPixel(47, 75), (132, 116, 49,), tolerance=10):
         return True
     else:
         return False
@@ -39,7 +51,7 @@ def countPots(inventory_table, pot):
     pot_found = False
     for row in range(7):
         for column in range(4):
-            if inventory_table[row][column].get() == pot:
+            if pot in inventory_table[row][column].get():
                 pot_found = True
     return pot_found
 
@@ -61,11 +73,11 @@ def readInventory(client, inventory_table, dc):
                 elif (itemCheck(color_array, color_empty_potion, 8)) == 4:
                     inventory_table[row][column].set('0')
                 elif (result := itemCheck(color_array, color_range_potion, 30)) != 0:
-                    inventory_table[row][column].set("R")
+                    inventory_table[row][column].set(f"R{result}")
                 elif (result := itemCheck(color_array, color_absorption_pot, 15)) != 0:
-                    inventory_table[row][column].set("A")
+                    inventory_table[row][column].set(f"A{result}")
                 elif (result := itemCheck(color_array, color_strength_pot, 15)) != 0:
-                    inventory_table[row][column].set("S")
+                    inventory_table[row][column].set(f"S{result}")
                 elif (itemCheck(color_array, color_inv_empty, 15)) == 4:
                     inventory_table[row][column].set('-')
                 else:
@@ -98,7 +110,7 @@ def readBuffPot(client, string_dict, dc):
         green_lines = 0
         while current_pixel <= 141:
             current_color = dc.GetPixel(current_pixel, 346)
-            if pixelMatchesColor(current_color, color_green, tolerance=2) and decimalColortoRGB(
+            if pixelMatchesColor(current_color, color_green, tolerance=5) and decimalColortoRGB(
                     previous_color) != color_green:
                 green_lines += 1
             previous_color = current_color

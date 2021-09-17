@@ -8,6 +8,27 @@ from Controllers import admin
 from reader import reader
 
 
+def savePass():
+    password = pass_entry.get()
+    with open('password.txt', 'w') as f:
+        f.write(password)
+        string_vars['box'].insert('end', "New password saved.\n")
+    pass_entry.delete(0, 'end')
+    pass_entry.insert(0, readPassword())
+
+
+def readPassword():  # Reads password from the password.txt then copies it to the clipboard.
+    with open('password.txt', 'r') as f:
+        data = f.readline()
+    password = 'No password saved'
+    data_length = len(data)
+    if data_length != 0:
+        password = ''
+        for i in range(data_length):
+            password += '*'
+    return password
+
+
 def startListener():  # Generates thread on the referenced function.
     print(f'Generating new thread for reader.')
     threading.Thread(target=reader, args=(client, string_vars, inventory_table,), daemon=True).start()
@@ -27,6 +48,16 @@ def runAlch():
 
 def runNMZ():
     string_vars['status'].set('Loading...')
+    style = options_var.get()
+    if style == 'Strength':
+        client.training_style = 'S'
+    elif style == 'Mage':
+        client.training_style = 'M'
+    else:
+        client.training_style = 'R'
+
+    string_vars['box'].insert('end', f"Starting NMZ script.\nStyle: {style}\n")
+
     startListener()
     threading.Thread(target=NMZ, args=(client, string_vars, lock, inventory_table,), daemon=True).start()
 
@@ -77,12 +108,14 @@ login_button = Button(button_frame, text='Login', width=7, command=lambda: runLo
 alch_button = Button(button_frame, text='Alch', width=7, command=lambda: runAlch()).grid(row=1, column=0, padx=10, pady=13)
 nmz_button = Button(button_frame, text='NMZ', width=7, command=lambda: runNMZ()).grid(row=2, column=0, padx=10)
 # Right side of button panel
-filler_label = Entry(button_frame, width=20).grid(row=0, column=1, pady=(10, 0), sticky='w')
-filler2_label = Label(button_frame, text='Alchs at pre-set location', width=25, anchor='w').grid(row=1, column=1, pady=13, sticky='w')
+pass_entry = Entry(button_frame, width=20)
+pass_entry.insert(0, readPassword())
+pass_entry.grid(row=0, column=1, pady=(10, 0), sticky='e')
+save_button = Button(button_frame, text='Save', width=7, command=lambda: savePass()).grid(row=0, column=2, padx=10, pady=(10, 0), sticky='e')
 options_var = StringVar()
 options_var.set('Ranging')
 option_menu = OptionMenu(button_frame, options_var, 'Ranging', 'Strength', 'Mage')
-option_menu.grid(row=2, column=1, sticky='w')
+option_menu.grid(row=2, column=2, sticky='w')
 
 # -Vertical separator
 Separator(gui, orient='vertical').grid(row=0, column=2, rowspan=4, sticky='ns')
@@ -92,27 +125,19 @@ inv_info_frame.grid(row=0, column=3)
 static_inventory_label = Label(inv_info_frame, text='Current tab: ').grid(row=0, column=0)
 inventory_label = Label(inv_info_frame, textvariable=string_vars['inventory']).grid(row=0, column=1)
 
-inventory_table = [{}, {}, {}, {}, {}, {}, {}]
 inv_frame = Frame(gui, width=150, padx=50)
 inv_frame.grid(row=1, rowspan=3, column=3, sticky='ns')
+
+inventory_table = [[StringVar() for _1 in range(4)] for _ in range(7)]
 for row in range(7):
     for column in range(4):
         inventory_table[row][column] = StringVar()
         inventory_table[row][column].set('?')
         l = Label(inv_frame, textvariable=inventory_table[row][column], relief=RIDGE, width=5, height=2)
-        if column == 0:
-            l.grid(row=row, column=column)
-        else:
-            l.grid(row=row, column=column)
+        l.grid(row=row, column=column)
 
-string_vars['box'] = st.ScrolledText(gui,
-                         wrap=WORD,
-                         width=2,
-                         height=7,
-                         bg='black',
-                         fg='white',
-                         font=("Arial", 12))
 
+string_vars['box'] = st.ScrolledText(gui, wrap=WORD, width=2, height=7, bg='black', fg='white', font=("Arial", 12))
 string_vars['box'].grid(row=4, column=0, columnspan=4, padx=(10, 0), pady=(20, 0), sticky='nsew')
 string_vars['box'].insert('end', "Program initiated.\n")
 string_vars['box'].configure(state='normal')
@@ -120,6 +145,6 @@ string_vars['box'].configure(state='normal')
 try:
     client = runelite()  # Object from Runelite.py class. Used for client data.
 except:
-    string_vars['box'].insert('end', "Runelite not found. Restart script with Runelite open.\n")
+    string_vars['box'].insert('end', "Runelite not found. Make sure Runelite is on screen before continuing.\n")
 
 gui.mainloop()  # Accessible code above this point.
