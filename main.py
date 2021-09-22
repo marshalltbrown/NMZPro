@@ -8,6 +8,11 @@ from Controllers import admin
 from reader import reader
 
 
+def test():
+    threading.Thread(target=testt, args=(client, sentinel,), daemon=True).start()
+    threading.Thread(target=reader, args=(client, sentinel,), daemon=True).start()
+
+
 def savePass():
     password = pass_entry.get()
     with open('password.txt', 'w') as f:
@@ -31,13 +36,13 @@ def readPassword():  # Reads password from the password.txt then copies it to th
 
 def startListener():  # Generates thread on the referenced function.
     print(f'Generating new thread for reader.')
-    threading.Thread(target=reader, args=(client, string_vars, inventory_table,), daemon=True).start()
+    threading.Thread(target=reader, args=(client, sentinel,), daemon=True).start()
 
 
 def runLogin():  # Copies password from file and logs in to Runelite.
     with lock:
         string_vars['status'].set('Logging in')
-        threading.Thread(target=login, args=(client, string_vars,), daemon=True).start()
+        threading.Thread(target=login, args=(client, sentinel,), daemon=True).start()
         string_vars['status'].set('Idle')
 
 
@@ -59,7 +64,7 @@ def runNMZ():
     string_vars['box'].insert('end', f"Starting NMZ script.\nStyle: {style}\n")
 
     startListener()
-    threading.Thread(target=NMZ, args=(client, string_vars, lock, inventory_table,), daemon=True).start()
+    threading.Thread(target=NMZ, args=(client, sentinel,), daemon=True).start()
 
 # --GUI and main thread set-up.
 gui = Tk()
@@ -105,7 +110,7 @@ button_frame = Frame(gui, height=100)
 button_frame.grid(row=3, column=0, columnspan=2, sticky='nw', pady=(10, 0))
 # Left side of button panel
 login_button = Button(button_frame, text='Login', width=7, command=lambda: runLogin()).grid(row=0, column=0, padx=10, pady=(10, 0))
-alch_button = Button(button_frame, text='Alch', width=7, command=lambda: runAlch()).grid(row=1, column=0, padx=10, pady=13)
+alch_button = Button(button_frame, text='Alch', width=7, command=lambda: test()).grid(row=1, column=0, padx=10, pady=13)
 nmz_button = Button(button_frame, text='NMZ', width=7, command=lambda: runNMZ()).grid(row=2, column=0, padx=10)
 # Right side of button panel
 pass_entry = Entry(button_frame, width=20)
@@ -144,6 +149,7 @@ string_vars['box'].configure(state='normal')
 
 try:
     client = runelite()  # Object from Runelite.py class. Used for client data.
+    sentinel = admin('R', string_vars, lock, inventory_table)
 except:
     string_vars['box'].insert('end', "Runelite not found. Make sure Runelite is on screen before continuing.\n")
 

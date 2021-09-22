@@ -133,3 +133,7 @@ dmypy.json
 .pyre/
 /Notes.txt
 /coordinate wizard.py
+
+#Local test files
+delete.py
+mouse_data.py

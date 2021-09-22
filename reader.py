@@ -1,42 +1,38 @@
 import threading
-
 import win32ui
 from utils import *
 
 
-def reader(client, string_dict, inventory_table):
+def reader(client, sentinel):
     mouse = Controller()
-    client.update()
     window = win32ui.FindWindow(None, "RuneLite")
-    threading.Thread(target=checkMovement,
-                     args=(client, window),
-                     daemon=True).start()
-    while True:
+    while sentinel.active:
+        checkMovement(client, window)
         dc = window.GetWindowDC()
         try:
-            readTab(client, string_dict, dc)
-            readBuffPot(client, string_dict, dc)
-            readAbsorbPot(client, string_dict, dc)
-            readHealth(client, string_dict, dc)
+            readTab(client, sentinel, dc)
+            readBuffPot(client, sentinel, dc)
+            readAbsorbPot(client, sentinel, dc)
+            readHealth(client, sentinel, dc)
             pos = mouse.position
             if pos[0] >= client.rectangle.right or pos[1] <= 207+client.rectangle.top:
-                readInventory(client, inventory_table, dc)
+                readInventory(client, sentinel.inv_strings, dc)
             client.inNMZ = checkNMZ(dc)
             dc.DeleteDC()
-        except:
-            continue
-        client.absorbs_remaining = countPots(inventory_table, 'A')
-        client.buffs_remaining = countPots(inventory_table, client.training_style)
+        except Exception as e:
+            print(e)
+        client.absorbs_remaining = countPots(sentinel.inv_strings, 'A')
+        client.buffs_remaining = countPots(sentinel.inv_strings, sentinel.style)
         time.sleep(.3)
 
 
 def checkMovement(client, window):
-    while True:
-        r = window.GetWindowRect()
-        new_offset = (r[0], r[1],)
-        if new_offset != client.offset:
-            client.update()
-        time.sleep(1)
+    r = window.GetWindowRect()
+    top_left = (r[0], r[1],)
+    bottom_right = (r[2], r[3],)
+    if top_left != client.offset:
+        print('Updated client')
+        client.update(top_left, bottom_right)
 
 
 def checkNMZ(dc):  # Checks 2 pixels on a Runelite display absorption pot while in NMZ (top-left of screen)
@@ -56,7 +52,7 @@ def countPots(inventory_table, pot):
     return pot_found
 
 
-def readInventory(client, inventory_table, dc):
+def readInventory(client, inv_strings, dc):
     if client.tab == 'Items':
         one_dose = coord_inv_slot1_1[1]
         for row in range(7):
@@ -69,41 +65,41 @@ def readInventory(client, inventory_table, dc):
                     dc.GetPixel(x, one_dose - 12)
                 ]
                 if itemCheck(color_array, color_dwarven_rock, 10) == 4:
-                    inventory_table[row][column].set('(*)')
+                    inv_strings[row][column].set('(*)')
                 elif (itemCheck(color_array, color_empty_potion, 8)) == 4:
-                    inventory_table[row][column].set('0')
+                    inv_strings[row][column].set('0')
                 elif (result := itemCheck(color_array, color_range_potion, 30)) != 0:
-                    inventory_table[row][column].set(f"R{result}")
+                    inv_strings[row][column].set(f"R{result}")
                 elif (result := itemCheck(color_array, color_absorption_pot, 15)) != 0:
-                    inventory_table[row][column].set(f"A{result}")
+                    inv_strings[row][column].set(f"A{result}")
                 elif (result := itemCheck(color_array, color_strength_pot, 15)) != 0:
-                    inventory_table[row][column].set(f"S{result}")
+                    inv_strings[row][column].set(f"S{result}")
                 elif (itemCheck(color_array, color_inv_empty, 15)) == 4:
-                    inventory_table[row][column].set('-')
+                    inv_strings[row][column].set('-')
                 else:
-                    inventory_table[row][column].set('?')
+                    inv_strings[row][column].set('?')
                 x += 42
             one_dose += 36
 
 
-def readTab(client, string_dict, dc):
+def readTab(client, sentinel, dc):
     item_tab_color = dc.GetPixel(*coord_item_tab_check)
     prayer_tab_color = dc.GetPixel(*coord_prayer_tab_check)
 
     if pixelMatchesColor(item_tab_color, color_tab_selected, tolerance=10):
         client.tab = 'Items'
-        string_dict['inventory'].set('On items tab.')
+        sentinel.strings['inventory'].set('On items tab.')
 
     elif pixelMatchesColor(prayer_tab_color, color_tab_selected, tolerance=10):
         client.tab = 'Prayer'
-        string_dict['inventory'].set('On prayer tab.')
+        sentinel.strings['inventory'].set('On prayer tab.')
     else:
         client.tab = 'Unknown'
-        string_dict['inventory'].set('On unknown tab.')
+        sentinel.strings['inventory'].set('On unknown tab.')
 
 
-def readBuffPot(client, string_dict, dc):
-    if client.buff == 'Pending':
+def readBuffPot(client, sentinel, dc):
+    if not sentinel.drinking_buff:
         # Checks if buff is in double digits still
         current_pixel = 123
         previous_color = 0
@@ -117,32 +113,41 @@ def readBuffPot(client, string_dict, dc):
             current_pixel += 1
 
         if green_lines == 2:
-            string_dict['buff'].set('>=10 remaining')
+            sentinel.strings['buff'].set('>=10 remaining')
+            client.buffed = True
         elif green_lines == 1:
-            string_dict['buff'].set('<=9 remaining')
+            sentinel.strings['buff'].set('<=9 remaining')
+            client.buffed = False
         else:
-            string_dict['buff'].set('???')
+            sentinel.strings['buff'].set('???')
+            client.buffed = False
 
 
-def readAbsorbPot(client, string_dict, dc):
-    if client.absorption == 'Pending':
+def readAbsorbPot(client, sentinel, dc):
+    if not sentinel.drinking_absorbs:
         if pixelMatchesColor(dc.GetPixel(28, 88), color_white, tolerance=2) \
                 and pixelMatchesColor(dc.GetPixel(28, 101), color_white, tolerance=2):
-            string_dict['absorption'].set('100+')
+            sentinel.strings['absorption'].set('100+')
+            client.absorbed = False
         elif pixelMatchesColor(dc.GetPixel(28, 92), color_white, tolerance=2):
-            string_dict['absorption'].set('200+')
+            sentinel.strings['absorption'].set('200+')
+            client.absorbed = False
         elif pixelMatchesColor(dc.GetPixel(28, 99), color_white, tolerance=2):
-            string_dict['absorption'].set('300+')
+            sentinel.strings['absorption'].set('300+')
+            client.absorbed = True
         else:
-            string_dict['absorption'].set('???')
+            sentinel.strings['absorption'].set('???')
+            client.absorbed = True
 
 
-def readHealth(client, string_dict, dc):
-    if client.eating == 'Pending':
+def readHealth(client, sentinel, dc):
+    if not sentinel.eating:
         if pixelMatchesColor(dc.GetPixel(*coord_health_check_1), color_health_is_present, tolerance=10) \
                 and pixelMatchesColor(dc.GetPixel(*coord_health_check_2), color_health_is_present, tolerance=10) \
                 and not pixelMatchesColor(dc.GetPixel(*coord_health_false_check), color_health_is_present, tolerance=10):
-            string_dict['health'].set('1 HP')
+            sentinel.strings['health'].set('1 HP')
+            client.hp_is_1 = True
         else:
-            string_dict['health'].set('? HP')
+            sentinel.strings['health'].set('? HP')
+            client.hp_is_1 = False
 
