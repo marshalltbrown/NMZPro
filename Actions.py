@@ -20,7 +20,7 @@ def NMZ(client, sentinel):
 
     while True:
         if not client.inNMZ:
-            sentinel.active = client.inNMZ
+            sentinel.active = False
             sentinel.post("NMZ not found.")
             time.sleep(getSleepTRNV(3))
             logout(client, sentinel)
@@ -63,7 +63,7 @@ def drinkBuff(client, sentinel):
         sentinel.post("Drinking buff pot.")
         moveToTab(client, "Items")
         time.sleep(getSleepTRNV(1))
-        if not goToInventorySpot(client, sentinel, sentinel.training_style):
+        if not goToInventorySpot(client, sentinel, sentinel.style):
             sentinel.drinking_buff = False
             sys.exit()
         time.sleep(getSleepTRNV(.5))
@@ -194,11 +194,11 @@ def eatRockCake(client, sentinel):
         pyautogui.click()
         time.sleep(getSleepTRNV(.2))
 
-    if hp_is2 and not sentinel.lock.locked():
-        with sentinel.lock:
-            sentinel.strings['health'].set('1 HP')
-            client.hp_is_1 = True
-            moveOffScreen(client, sentinel)
+    if hp_is2:
+        sentinel.strings['health'].set('1 HP')
+        client.hp_is_1 = True
+        moveOffScreen(client, sentinel)
+
     sentinel.eating = False
 
 
@@ -266,7 +266,6 @@ def moveToTab(client, tab):  # Only call with movement lock.
 def login(client, sentinel):  # Takes control of the mouse and keyboard to login to Runelite.
     sentinel.post('Beginning login script.')
     readPassword()
-    client.update()
     client.setFocus()
     window = win32ui.FindWindow(None, "RuneLite")
     dc = window.GetWindowDC()
