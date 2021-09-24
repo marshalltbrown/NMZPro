@@ -15,7 +15,6 @@ def testt(client, sentinel):
 
 
 def NMZ(client, sentinel):
-    client.nmz_running = True
     client.setFocus()
 
     while True:
@@ -80,7 +79,7 @@ def drinkAbsorption(client, sentinel):
     sentinel.drinking_absorbs = True
     sleep_duration = round(getSleepTRNV(70))
     for timer in range(sleep_duration):
-        if not client.nmz_running:
+        if not sentinel.active:
             sentinel.drinking_absorbs = False
             sys.exit()
         if timer > (sleep_duration - 5):
@@ -113,7 +112,7 @@ def flickRapidHeal(client, sentinel):
     # Start waiting ~1 minute before flicking rapid heal
     sleep_duration = round(getSleepTRNV(52))
     for timer in range(sleep_duration):
-        if not client.nmz_running:
+        if not sentinel.active:
             sentinel.flicking = False
             sys.exit()
         if timer > (sleep_duration - 5):
@@ -159,7 +158,7 @@ def eatRockCake(client, sentinel):
     # Wait for timer to eat rock cake.
     sleep_duration = round(getSleepTRNV(.1))
     for timer in range(sleep_duration):
-        if not client.nmz_running:
+        if not sentinel.active:
             sentinel.eating = False
             sys.exit()
         if timer > (sleep_duration - 5):

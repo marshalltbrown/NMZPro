@@ -135,5 +135,5 @@ dmypy.json
 /coordinate wizard.py
 
 #Local test files
-/delete.py
+/ocr_test.py
 /mouse_data.py
