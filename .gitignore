@@ -137,3 +137,5 @@ dmypy.json
 #Local test files
 /ocr_test.py
 /mouse_data.py
+/buff_test.py
+/img/

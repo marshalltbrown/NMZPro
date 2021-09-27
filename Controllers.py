@@ -18,6 +18,8 @@ class admin:
         self.flicking = False
         self.drinking_absorbs = False
         self.drinking_buff = False
+        self.overloading = False
+        self.overload_soon = False
         self.moving_soon = {'buff': False,
                             'absorb': False,
                             'flicking': False,

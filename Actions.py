@@ -9,14 +9,49 @@ from utils import *
 
 
 def testt(client, sentinel):
-    while True:
-        goToInventorySpot(client, sentinel, '(*)')
-        time.sleep(4)
+    invent = getInventoryLocations(client, sentinel, 'A')
+    if len(invent) > 3:
+        invent = invent[:3]
+    if len(invent) != 0:
+        for i in range(len(invent)):
+            moveMouse(invent[i])
+            time.sleep(.3)
 
 
 def NMZ(client, sentinel):
     client.setFocus()
 
+    while True:
+        if not client.inNMZ:
+            timer = 0
+            while timer <= 10:
+                if client.inNMZ:
+                    continue
+                if timer == 10:
+                    sentinel.active = False
+                    sentinel.post("NMZ not found.")
+                    time.sleep(getSleepTRNV(3))
+                    logout(client, sentinel)
+                    sys.exit()
+                time.sleep(1)
+                timer += 1
+
+        if not sentinel.drinking_absorbs and client.absorbs_remaining and client.absorbs <= 250:
+            threading.Thread(target=drinkAbsorption, args=(client, sentinel), daemon=True).start()
+
+        if not sentinel.drinking_buff and client.buffs_remaining and not client.buffed:
+            threading.Thread(target=drinkBuff, args=(client, sentinel), daemon=True).start()
+
+        if not sentinel.eating and client.hp > 1:
+            threading.Thread(target=eatRockCake, args=(client, sentinel), daemon=True).start()
+
+        if not sentinel.flicking:
+            threading.Thread(target=flickRapidHeal, args=(client, sentinel), daemon=True).start()
+
+        time.sleep(1)
+
+
+def overload(client, sentinel):
     while True:
         if not client.inNMZ:
             sentinel.active = False
@@ -25,19 +60,18 @@ def NMZ(client, sentinel):
             logout(client, sentinel)
             sys.exit()
 
-        if not sentinel.drinking_absorbs and client.absorbs_remaining and not client.absorbed:
-            threading.Thread(target=drinkAbsorption, args=(client, sentinel), daemon=True).start()
-
-        if not sentinel.drinking_buff and client.buffs_remaining and not client.buffed:
-            threading.Thread(target=drinkBuff, args=(client, sentinel), daemon=True).start()
-
-        if not sentinel.eating and not client.hp_is_1:
-            threading.Thread(target=eatRockCake, args=(client, sentinel), daemon=True).start()
-
-        if not sentinel.flicking:
+        if not sentinel.flicking and not sentinel.overload_soon:
             threading.Thread(target=flickRapidHeal, args=(client, sentinel), daemon=True).start()
 
-        time.sleep(1)
+        if not sentinel.drinking_absorbs and client.absorbs_remaining and client.absorbs <= 250\
+                and not sentinel.overload_soon:
+            threading.Thread(target=drinkAbsorption, args=(client, sentinel), daemon=True).start()
+
+        if not sentinel.drinking_buff and client.buffs_remaining and not client.buffed and not sentinel.overload_soon:
+            threading.Thread(target=drinkBuff, args=(client, sentinel), daemon=True).start()
+
+        if not sentinel.eating and client.hp > 1:
+            threading.Thread(target=eatRockCake, args=(client, sentinel), daemon=True).start()
 
 
 def drinkBuff(client, sentinel):
@@ -62,16 +96,17 @@ def drinkBuff(client, sentinel):
         sentinel.post("Drinking buff pot.")
         moveToTab(client, "Items")
         time.sleep(getSleepTRNV(1))
-        if not goToInventorySpot(client, sentinel, sentinel.style):
+        buffs = getInventoryLocations(client, sentinel, sentinel.style)
+        if len(buffs) != 0:
+            moveMouse(buffs[0])
+            time.sleep(getSleepTRNV(.5))
+            pyautogui.click()
+            time.sleep(getSleepTRNV(.05))
+        else:
             sentinel.drinking_buff = False
             sys.exit()
-        time.sleep(getSleepTRNV(.5))
-        pyautogui.click()
-        time.sleep(getSleepTRNV(.05))
 
     moveOffScreen(client, sentinel)
-
-    sentinel.strings['buff'].set("Done.")
     sentinel.drinking_buff = False
 
 
@@ -96,13 +131,21 @@ def drinkAbsorption(client, sentinel):
         sentinel.post("Drinking absorption pot.")
         moveToTab(client, "Items")
         time.sleep(getSleepTRNV(.3))
-        if not goToInventorySpot(client, sentinel, "A"):
-            sentinel.drinking_absorbs = False
-            sys.exit()
+        absorbs = getInventoryLocations(client, sentinel, "A")  # Gets list of absorbs
+        if len(absorbs) > 3:  # Drinks up to 3 absorbs
+            absorbs = absorbs[:3]
+        if len(absorbs) != 0:
+            for i in range(len(absorbs)):  # Moves to absorb
+                moveMouse(absorbs[i])
+                time.sleep(.3)
+                for _1 in range(round(getTRNV(15, 13, 17))):  # Clicks absorb pot
+                    pyautogui.click()
+                    time.sleep(getSleepTRNV(.05))
+            else:
+                sentinel.drinking_absorbs = False
+                sys.exit()
         time.sleep(getSleepTRNV(.5))
-        for i in range(round(getTRNV(15, 13, 17))):
-            pyautogui.click()
-            time.sleep(getSleepTRNV(.05))
+
     moveOffScreen(client, sentinel)
     sentinel.drinking_absorbs = False
 
@@ -172,32 +215,25 @@ def eatRockCake(client, sentinel):
 
     with sentinel.lock:
         sentinel.post("Guzzling rock cake.")
-        window = win32ui.FindWindow(None, "RuneLite")
-        dc = window.GetWindowDC()
-        hp_is2 = False
-        if pixelMatchesColor(dc.GetPixel(533, 86), color_health_is_present, tolerance=10) \
-                and pixelMatchesColor(dc.GetPixel(537, 92), color_health_is_present, tolerance=10):
-            hp_is2 = True
 
         moveToTab(client, 'Items')
         time.sleep(getSleepTRNV(.1))
-        if not goToInventorySpot(client, sentinel, '(*)'):
+        rock = getInventoryLocations(client, sentinel, '(*)')
+        if len(rock) != 0:
+            moveMouse(rock[0])
+            time.sleep(getSleepTRNV(.1))
+            pyautogui.rightClick()
+            time.sleep(getSleepTRNV(.2))
+            x, y = pyautogui.position()
+            moveMouse((getTRNV(x, x - 5, x + 5), getTRNV(y + 41, y + 36, y + 46),))
+            time.sleep(getSleepTRNV(.1))
+            pyautogui.click()
+            time.sleep(getSleepTRNV(.2))
+        else:
             sentinel.eating = False
             sys.exit()
-        time.sleep(getSleepTRNV(.1))
-        pyautogui.rightClick()
-        time.sleep(getSleepTRNV(.2))
-        x, y = pyautogui.position()
-        moveMouse((getTRNV(x, x - 5, x + 5), getTRNV(y + 41, y + 36, y + 46),))
-        time.sleep(getSleepTRNV(.1))
-        pyautogui.click()
-        time.sleep(getSleepTRNV(.2))
 
-    if hp_is2:
-        sentinel.strings['health'].set('1 HP')
-        client.hp_is_1 = True
-        moveOffScreen(client, sentinel)
-
+    moveOffScreen(client, sentinel)
     sentinel.eating = False
 
 
@@ -215,21 +251,14 @@ def logout(client, sentinel):
         moveOffScreen(client, sentinel)
 
 
-def goToInventorySpot(client, sentinel, item):
-    row = 0
-    column = 0
-    item_found = False
-    while row <= 6:
-        while column <= 3:
+def getInventoryLocations(client, sentinel, item):
+    inventory = []
+    for row in range(7):
+        for column in range(4):
             if item in sentinel.inv_strings[row][column].get():
-                moveMouse(getTRNVCoord(client.inventory[row][column].rect))
-                item_found = True
-                row = 9
-                column = 9
-            column += 1
-        row += 1
-        column = 0
-    return item_found
+                inventory.append(getTRNVCoord(client.inventory[row][column].rect))
+
+    return inventory
 
 
 def moveOffScreen(client, sentinel):  # Must have movement lock in calling function to call

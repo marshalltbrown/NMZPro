@@ -9,8 +9,11 @@ from reader import reader
 
 
 def test():
-    threading.Thread(target=testt, args=(client, sentinel,), daemon=True).start()
-    threading.Thread(target=reader, args=(client, sentinel,), daemon=True).start()
+
+    boss = admin('O', string_vars, lock, inventory_table)
+    threading.Thread(target=reader, args=(client, boss,), daemon=True).start()
+    time.sleep(1)
+    # threading.Thread(target=testt, args=(client, boss,), daemon=True).start()
 
 
 def savePass():
@@ -36,13 +39,15 @@ def readPassword():  # Reads password from the password.txt then copies it to th
 
 def startListener():  # Generates thread on the referenced function.
     print(f'Generating new thread for reader.')
-    threading.Thread(target=reader, args=(client, sentinel,), daemon=True).start()
+    boss = admin('Null', string_vars, lock, inventory_table)
+    threading.Thread(target=reader, args=(client, boss,), daemon=True).start()
 
 
 def runLogin():  # Copies password from file and logs in to Runelite.
     with lock:
         string_vars['status'].set('Logging in')
-        threading.Thread(target=login, args=(client, sentinel,), daemon=True).start()
+        boss = admin('Null', string_vars, lock, inventory_table)
+        threading.Thread(target=login, args=(client, boss,), daemon=True).start()
         string_vars['status'].set('Idle')
 
 
@@ -55,16 +60,22 @@ def runNMZ():
     string_vars['status'].set('Loading...')
     style = options_var.get()
     if style == 'Strength':
-        client.training_style = 'S'
+        s_style = 'S'
     elif style == 'Mage':
-        client.training_style = 'M'
+        s_style = 'M'
+    elif style == 'Overload':
+        s_style = 'O'
     else:
-        client.training_style = 'R'
+        s_style = 'R'
 
     string_vars['box'].insert('end', f"Starting NMZ script.\nStyle: {style}\n")
-
-    startListener()
-    threading.Thread(target=NMZ, args=(client, sentinel,), daemon=True).start()
+    boss = admin(s_style, string_vars, lock, inventory_table)
+    threading.Thread(target=reader, args=(client, boss,), daemon=True).start()
+    time.sleep(3)
+    if s_style == 'O':
+        threading.Thread(target=overload, args=(client, boss,), daemon=True).start()
+    else:
+        threading.Thread(target=NMZ, args=(client, boss,), daemon=True).start()
 
 # --GUI and main thread set-up.
 gui = Tk()
@@ -119,7 +130,7 @@ pass_entry.grid(row=0, column=1, pady=(10, 0), sticky='e')
 save_button = Button(button_frame, text='Save', width=7, command=lambda: savePass()).grid(row=0, column=2, padx=10, pady=(10, 0), sticky='e')
 options_var = StringVar()
 options_var.set('Ranging')
-option_menu = OptionMenu(button_frame, options_var, 'Ranging', 'Strength', 'Mage')
+option_menu = OptionMenu(button_frame, options_var, 'Ranging', 'Strength', 'Mage', 'Overload')
 option_menu.grid(row=2, column=2, sticky='w')
 
 # -Vertical separator
@@ -149,8 +160,7 @@ string_vars['box'].configure(state='normal')
 
 try:
     client = runelite()  # Object from Runelite.py class. Used for client data.
-    sentinel = admin('R', string_vars, lock, inventory_table)
-except:
+except Exception as e:
     string_vars['box'].insert('end', "Runelite not found. Make sure Runelite is on screen before continuing.\n")
 
 gui.mainloop()  # Accessible code above this point.

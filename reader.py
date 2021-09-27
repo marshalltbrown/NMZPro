@@ -1,23 +1,35 @@
 import threading
+
+import cv2
 import win32ui
+from PIL import Image
+import numpy as np
 from utils import *
+import pyautogui
+from easyocr import Reader
 
 
 def reader(client, sentinel):
     mouse = Controller()
     window = win32ui.FindWindow(None, "RuneLite")
+    ocr = Reader(['en'], gpu=True)
     while sentinel.active:
         checkMovement(client, window)
         dc = window.GetWindowDC()
         try:
             readTab(client, sentinel, dc)
-            readBuffPot(client, sentinel, dc)
-            readAbsorbPot(client, sentinel, dc)
-            readHealth(client, sentinel, dc)
+            if sentinel.style == 'O':
+                readOverloadState(client, sentinel, dc)
+            else:
+                readBuffPot(client, sentinel, dc)
+            if sentinel.style == 'O':
+                read_buff_2(client, sentinel, ocr)
+            else:
+                read_buff_1(client, sentinel, ocr)
+            readHealth(client, sentinel, ocr)
             pos = mouse.position
             if pos[0] >= client.rectangle.right or pos[1] <= 207+client.rectangle.top:
                 readInventory(client, sentinel.inv_strings, dc)
-            client.inNMZ = checkNMZ(dc)
             dc.DeleteDC()
         except Exception as e:
             print(e)
@@ -33,6 +45,10 @@ def checkMovement(client, window):
     if top_left != client.offset:
         print('Updated client')
         client.update(top_left, bottom_right)
+
+
+def readOverloadState(client, sentinel, dc): #TODO set timer and track 5 mins from overload click
+    pass
 
 
 def checkNMZ(dc):  # Checks 2 pixels on a Runelite display absorption pot while in NMZ (top-left of screen)
@@ -67,13 +83,15 @@ def readInventory(client, inv_strings, dc):
                 if itemCheck(color_array, color_dwarven_rock, 10) == 4:
                     inv_strings[row][column].set('(*)')
                 elif (itemCheck(color_array, color_empty_potion, 8)) == 4:
-                    inv_strings[row][column].set('0')
+                    inv_strings[row][column].set('X')
                 elif (result := itemCheck(color_array, color_range_potion, 30)) != 0:
                     inv_strings[row][column].set(f"R{result}")
                 elif (result := itemCheck(color_array, color_absorption_pot, 15)) != 0:
                     inv_strings[row][column].set(f"A{result}")
                 elif (result := itemCheck(color_array, color_strength_pot, 15)) != 0:
                     inv_strings[row][column].set(f"S{result}")
+                elif (result := itemCheck(color_array, color_overload_pot, 10)) != 0:
+                    inv_strings[row][column].set(f"O{result}")
                 elif (itemCheck(color_array, color_inv_empty, 15)) == 4:
                     inv_strings[row][column].set('-')
                 else:
@@ -123,31 +141,75 @@ def readBuffPot(client, sentinel, dc):
             client.buffed = False
 
 
-def readAbsorbPot(client, sentinel, dc):
-    if not sentinel.drinking_absorbs:
-        if pixelMatchesColor(dc.GetPixel(28, 88), color_white, tolerance=2) \
-                and pixelMatchesColor(dc.GetPixel(28, 101), color_white, tolerance=2):
-            sentinel.strings['absorption'].set('100+')
-            client.absorbed = False
-        elif pixelMatchesColor(dc.GetPixel(28, 92), color_white, tolerance=2):
-            sentinel.strings['absorption'].set('200+')
-            client.absorbed = False
-        elif pixelMatchesColor(dc.GetPixel(28, 99), color_white, tolerance=2):
-            sentinel.strings['absorption'].set('300+')
-            client.absorbed = True
-        else:
-            sentinel.strings['absorption'].set('???')
-            client.absorbed = True
+def resize_image(image):
+    basewidth = 75
+    wpercent = (basewidth / float(image.size[0]))
+    hsize = int((float(image.size[1]) * float(wpercent)))
+    img = image.resize((basewidth, hsize), Image.ANTIALIAS)
+    return img
 
 
-def readHealth(client, sentinel, dc):
-    if not sentinel.eating:
-        if pixelMatchesColor(dc.GetPixel(*coord_health_check_1), color_health_is_present, tolerance=10) \
-                and pixelMatchesColor(dc.GetPixel(*coord_health_check_2), color_health_is_present, tolerance=10) \
-                and not pixelMatchesColor(dc.GetPixel(*coord_health_false_check), color_health_is_present, tolerance=10):
-            sentinel.strings['health'].set('1 HP')
-            client.hp_is_1 = True
-        else:
-            sentinel.strings['health'].set('? HP')
-            client.hp_is_1 = False
+def read_buff_1(client, sentinel, ocr):
+    left = 27 + client.rectangle.left
+    top = 95 + client.rectangle.top
+    width = 29
+    height = 12
+    absorb_region = (left, top, width, height,)
+    img = pyautogui.screenshot(region=absorb_region)
+    img = resize_image(img)
+    img = np.array(img)
+    word = ocr.readtext(img, allowlist='0123456789', detail=0)
+    if len(word) != 0:
+        client.inNMZ = True
+        word = word[0]
+        if not sentinel.drinking_absorbs:
+            sentinel.strings['absorption'].set(f"{word} Remaining")
+        client.absorbs = int(word)
+    else:
+        client.inNMZ = False
+
+
+def read_buff_2(client, sentinel, ocr):
+    left = 90 + client.rectangle.left
+    top = 95 + client.rectangle.top
+    width = 29
+    height = 12
+    absorb_region = (left, top, width, height,)
+    img = pyautogui.screenshot(region=absorb_region)
+    img = resize_image(img)
+    img = np.array(img)
+    word = ocr.readtext(img, allowlist='0123456789', detail=0)
+    if len(word) != 0:
+        client.inNMZ = True
+        word = word[0]
+        if not sentinel.drinking_absorbs:
+            sentinel.strings['absorption'].set(f"{word} Remaining")
+        client.absorbs = int(word)
+    else:
+        client.inNMZ = False
+
+
+def readHealth(client, sentinel, ocr):
+    left = 524 + client.rectangle.left
+    top = 82 + client.rectangle.top
+    width = 545 - 524
+    height = 95 - 82
+    hp_region = (left, top, width, height,)
+
+    low_thresh = (60, 160, 160)
+    high_thresh = (255, 260, 260)
+
+    img = pyautogui.screenshot(region=hp_region)
+    img = np.array(resize_image(img))
+
+    hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+    mask = cv2.inRange(hsv_img, low_thresh, high_thresh)
+    blur = cv2.GaussianBlur(mask, (7, 7), 0)
+    word = ocr.readtext(blur, allowlist='0123456789', detail=0)
+
+    if len(word) != 0:
+        word = word[0]
+        sentinel.strings['health'].set(f"{word} hp")
+        client.hp = int(word)
+
 

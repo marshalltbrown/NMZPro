@@ -15,6 +15,7 @@ color_tab_selected = 117, 40, 30
 color_user_box_is_present = 21, 20, 19
 color_health_is_present = 255, 6, 0
 color_range_potion = 36, 150, 194
+color_overload_pot = (9, 7, 7)
 color_dwarven_rock = 100, 90, 62
 color_empty_potion = 98, 98, 102
 color_inv_empty = 71, 62, 52

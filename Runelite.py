@@ -11,11 +11,10 @@ class runelite:
         # Usable vars
         self.rectangle = self.client.rectangle()
         self.tab = 'Unknown'
-        self.health = 'Unknown'
 
         self.buffed = True
-        self.absorbed = True
-        self.hp_is_1 = False
+        self.absorbs = 0
+        self.hp = 1
 
         self.absorbs_remaining = True
         self.buffs_remaining = True

@@ -6,6 +6,10 @@ import pyautogui
 import time
 import numpy as np
 import os
+from mpl_toolkits.mplot3d import Axes3D
+
+
+from matplotlib import pyplot as plt, cm, colors
 
 
 def show_image(image):
@@ -14,61 +18,112 @@ def show_image(image):
 
 
 def resize_image(image):
-	basewidth = 100
+	basewidth = 75
 	wpercent = (basewidth / float(image.size[0]))
 	hsize = int((float(image.size[1]) * float(wpercent)))
 	img = image.resize((basewidth, hsize), Image.ANTIALIAS)
 	return img
 
 
-def cleanup_text(text):
-	# strip out non-ASCII text so we can draw the text on the image
-	# using OpenCV
-	return "".join([c if ord(c) < 128 else "" for c in text]).strip()
+def screenshot(my_region, resize=True):
+	if my_region:
+		img = pyautogui.screenshot(region=my_region)
+	else:
+		img = pyautogui.screenshot()
+	if resize:
+		img = resize_image(img)
+	return np.array(img)
 
 
-window = win32ui.FindWindow(None, "RuneLite")
-l, t, r, b = window.GetWindowRect()
+def read(ocr, img, path=False, whitelist='0123456789'):
+	if path:
+		image = Image.open(img)
+	else:
+		image = img
 
-# Health bar screenshot
-left = 524 + l
-top = 82 + t
-width = 545 - 524
-height = 95 - 82
+	word = ocr.readtext(image, allowlist=whitelist, detail=0)
+
+	return word
 
 
-ocr = Reader(['en'], gpu=True)
+def rgb_chart(img):
+	r, g, b = cv2.split(img)
+	fig = plt.figure()
+	axis = fig.add_subplot(1, 1, 1, projection="3d")
+	pixel_colors = img.reshape((np.shape(img)[0] * np.shape(img)[1], 3))
+	norm = colors.Normalize(vmin=-1., vmax=1.)
+	norm.autoscale(pixel_colors)
+	pixel_colors = norm(pixel_colors).tolist()
+	axis.scatter(r.flatten(), g.flatten(), b.flatten(), facecolors=pixel_colors, marker=".")
+	axis.set_xlabel("Red")
+	axis.set_ylabel("Green")
+	axis.set_zlabel("Blue")
+	plt.show()
 
-timer = time.time()
-counter = 0
-iters = 1
-for i in range(iters):
-	img = pyautogui.screenshot(region=(left, top, width, height,))
-	img = np.array(resize_image(img))
-	## convert to hsv
-	hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
 
-	## mask of green (36,25,25) ~ (86, 255,255)
-	# mask = cv2.inRange(hsv, (36, 25, 25), (86, 255,255))
-	mask = cv2.inRange(hsv, (36, 25, 25), (70, 255, 255))
+def hsv_chart(hsv):
+	h, s, v = cv2.split(hsv)
+	fig = plt.figure()
+	axis = fig.add_subplot(1, 1, 1, projection="3d")
+	pixel_colors = hsv.reshape((np.shape(hsv)[0] * np.shape(hsv)[1], 3))
+	norm = colors.Normalize(vmin=-1., vmax=1.)
+	norm.autoscale(pixel_colors)
+	pixel_colors = norm(pixel_colors).tolist()
+	axis.scatter(h.flatten(), s.flatten(), v.flatten(), facecolors=pixel_colors, marker=".")
+	axis.set_xlabel("Hue")
+	axis.set_ylabel("Saturation")
+	axis.set_zlabel("Value")
+	plt.show()
 
-	## slice the green
-	imask = mask > 0
-	green = np.zeros_like(img, np.uint8)
-	green[imask] = img[imask]
 
-	cv2.imwrite(img, green)
+def show_threshs(low, high):
+	lo_square = np.full((10, 10, 3), low, dtype=np.uint8) / 255.0
+	do_square = np.full((10, 10, 3), high, dtype=np.uint8) / 255.0
+	plt.subplot(1, 2, 1)
+	plt.imshow(colors.hsv_to_rgb(do_square))
+	plt.subplot(1, 2, 2)
+	plt.imshow(colors.hsv_to_rgb(lo_square))
+	plt.show()
 
-	show_image(img)
-	word = ocr.readtext(img, allowlist='0123456789', detail=0)
-	time_dif = time.time() - timer
-	print(f"Word: {word}, Time: {time_dif}")
 
-	counter += time_dif
-	timer = time.time()
+def filter_hp(img):
+	low_thresh = (60, 160, 160)
+	high_thresh = (255, 260, 260)
+	hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+	mask = cv2.inRange(hsv_img, low_thresh, high_thresh)
+	blur = cv2.GaussianBlur(mask, (7, 7), 0)
+	return blur
 
-print(f"Average OCR time: {counter/iters}")
 
-#
-#
+def run():
+
+	window = win32ui.FindWindow(None, "RuneLite")
+	l, t, r, b = window.GetWindowRect()
+	runelite_region = (l, t, r-l, b-t,)
+	# Health bar screenshot
+	left = 27 + l
+	top = 95 + t
+	width = 29
+	height = 12
+	hp_region = (left, top, width, height,)
+
+	ocr = Reader(['en'], gpu=True)
+	for i in range(1):
+		img = screenshot(my_region=hp_region)
+		#img = cv2.imread('img/376.png')
+		post_img = filter_hp(img)
+		# hsv_chart(post_img)
+		# result = cv2.bitwise_and(img, img, mask=mask)
+
+		print(f"Raw: {read(ocr, img)} Edited: {read(ocr, post_img)}")
+		time.sleep(1)
+
+		plt.subplot(1, 2, 1)
+		plt.imshow(img)
+		plt.subplot(1, 2, 2)
+		plt.imshow(post_img)
+		plt.show()
+
+if __name__ == '__main__':
+	run()
 
