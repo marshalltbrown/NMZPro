@@ -5,13 +5,13 @@ from tkinter.ttk import Separator
 from Actions import *
 from Runelite import runelite
 from Controllers import admin
-from reader import reader
+from reader import reader, overload_tracker
 
 
 def test():
 
     boss = admin('O', string_vars, lock, inventory_table)
-    threading.Thread(target=reader, args=(client, boss,), daemon=True).start()
+    threading.Thread(target=overload_tracker, args=(client, boss,), daemon=True).start()
     time.sleep(1)
     # threading.Thread(target=testt, args=(client, boss,), daemon=True).start()
 
@@ -70,9 +70,10 @@ def runNMZ():
 
     string_vars['box'].insert('end', f"Starting NMZ script.\nStyle: {style}\n")
     boss = admin(s_style, string_vars, lock, inventory_table)
-    threading.Thread(target=reader, args=(client, boss,), daemon=True).start()
     time.sleep(3)
+    threading.Thread(target=reader, args=(client, boss,), daemon=True).start()
     if s_style == 'O':
+        threading.Thread(target=overload_tracker, args=(client, boss,), daemon=True).start()
         threading.Thread(target=overload, args=(client, boss,), daemon=True).start()
     else:
         threading.Thread(target=NMZ, args=(client, boss,), daemon=True).start()

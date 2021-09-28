@@ -19,7 +19,8 @@ class admin:
         self.drinking_absorbs = False
         self.drinking_buff = False
         self.overloading = False
-        self.overload_soon = False
+        self.overload_time_left = 300
+        self.overloaded = False
         self.moving_soon = {'buff': False,
                             'absorb': False,
                             'flicking': False,

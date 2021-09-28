@@ -1,71 +1,98 @@
 import threading
-
 import cv2
 import win32ui
 from PIL import Image
 import numpy as np
+from pywinauto import Application
+
 from utils import *
 import pyautogui
 from easyocr import Reader
 
 
-def reader(client, sentinel):
-    mouse = Controller()
-    window = win32ui.FindWindow(None, "RuneLite")
-    ocr = Reader(['en'], gpu=True)
-    while sentinel.active:
-        checkMovement(client, window)
-        dc = window.GetWindowDC()
+def overload_tracker(client, script):
+    timer = time.time()
+    location = (client.rectangle.left, client.rectangle.top, client.rectangle.right, client.rectangle.bottom)
+    script.overloaded = read_overload(pyautogui.screenshot(region=location))
+    while script.active:
         try:
-            readTab(client, sentinel, dc)
-            if sentinel.style == 'O':
-                readOverloadState(client, sentinel, dc)
-            else:
-                readBuffPot(client, sentinel, dc)
-            if sentinel.style == 'O':
-                read_buff_2(client, sentinel, ocr)
-            else:
-                read_buff_1(client, sentinel, ocr)
-            readHealth(client, sentinel, ocr)
-            pos = mouse.position
-            if pos[0] >= client.rectangle.right or pos[1] <= 207+client.rectangle.top:
-                readInventory(client, sentinel.inv_strings, dc)
-            dc.DeleteDC()
+            # Get window DC used for getting color from pixels
+            if read_overload(pyautogui.screenshot(region=location)) and not script.overloaded:
+                script.overloaded = True
+                timer = time.time()
+                while read_overload(pyautogui.screenshot(region=location)):
+                    script.overload_time_left = round(300 - (time.time() - timer))
+                    script.strings['buff'].set(f"{script.overload_time_left} seconds of O left")
+                    time.sleep(.5)
+                script.overloaded = False
+                script.overload_time_left = 300
+                script.strings['buff'].set("Waiting for overload.")
         except Exception as e:
             print(e)
-        client.absorbs_remaining = countPots(sentinel.inv_strings, 'A')
-        client.buffs_remaining = countPots(sentinel.inv_strings, sentinel.style)
-        time.sleep(.3)
 
 
-def checkMovement(client, window):
-    r = window.GetWindowRect()
-    top_left = (r[0], r[1],)
-    bottom_right = (r[2], r[3],)
-    if top_left != client.offset:
-        print('Updated client')
-        client.update(top_left, bottom_right)
-
-
-def readOverloadState(client, sentinel, dc): #TODO set timer and track 5 mins from overload click
-    pass
-
-
-def checkNMZ(dc):  # Checks 2 pixels on a Runelite display absorption pot while in NMZ (top-left of screen)
-    if pixelMatchesColor(dc.GetPixel(40, 80), (144, 136, 123,), tolerance=10)\
-            and pixelMatchesColor(dc.GetPixel(47, 75), (132, 116, 49,), tolerance=10):
+def read_overload(im):
+    top_pot = im.getpixel((40, 69,))
+    mid_pot = im.getpixel((40, 83,))
+    bottom_pot = im.getpixel((40, 92,))
+    top = pixelMatchesColor(top_pot, (162, 145, 62,), tolerance=5)
+    mid = pixelMatchesColor(mid_pot, (9, 7, 7,), tolerance=5)
+    bottom = pixelMatchesColor(bottom_pot, (9, 7, 7,), tolerance=5)
+    if top and mid and bottom:
         return True
     else:
         return False
 
 
-def countPots(inventory_table, pot):
-    pot_found = False
-    for row in range(7):
-        for column in range(4):
-            if pot in inventory_table[row][column].get():
-                pot_found = True
-    return pot_found
+def reader(client, script):
+    mouse = Controller()
+    window = win32ui.FindWindow(None, "RuneLite")
+    ocr = Reader(['en'], gpu=True)
+    
+    # Params are ( left, top, width, height )
+    left_pot_region = (27 + client.rectangle.left, 95 + client.rectangle.top, 29, 12,)
+    right_pot_region = (90 + client.rectangle.left, 95 + client.rectangle.top, 29, 12,)
+
+    while script.active:
+        try:
+            # Get window DC used for getting color from pixels
+            dc = window.GetWindowDC()
+            
+            # Check if the window has moved. If so, update client rectangles
+            client.update_location()
+            
+            # Reads between 3 useful tabs to see which is active
+            readTab(client, script, dc)
+            
+            # If in overload mode, absorptions are on the box to the left
+            if script.style == 'O':
+                if script.overloaded:
+                    read_nmz_pot(client, script, ocr, right_pot_region)
+                else:
+                    read_nmz_pot(client, script, ocr, left_pot_region)
+
+            else:  # If in regular mode, absorptions are on the left
+                readBuffPot(client, script, dc)
+                read_nmz_pot(client, script, ocr, left_pot_region)
+
+            # OCR health
+            readHealth(client, script, ocr)
+
+            # If mouse is not in the inventory window then read the inventory
+            pos = mouse.position
+            if pos[0] >= client.rectangle.right or pos[1] <= 207+client.rectangle.top:
+                readInventory(client, script.inv_strings, dc)
+
+            # Delete the DC to refresh for next run and prevent memory leaks
+            dc.DeleteDC()
+            
+        except Exception as e:
+            print(e)
+        time.sleep(.3)
+
+
+def readOverloadState(client, script, dc):  # TODO set timer and track 5 minutes from overload click
+    pass
 
 
 def readInventory(client, inv_strings, dc):
@@ -81,43 +108,51 @@ def readInventory(client, inv_strings, dc):
                     dc.GetPixel(x, one_dose - 12)
                 ]
                 if itemCheck(color_array, color_dwarven_rock, 10) == 4:
-                    inv_strings[row][column].set('(*)')
+                    update_inventory(client, inv_strings, row, column, '(*)')
                 elif (itemCheck(color_array, color_empty_potion, 8)) == 4:
-                    inv_strings[row][column].set('X')
+                    update_inventory(client, inv_strings, row, column, 'X')
                 elif (result := itemCheck(color_array, color_range_potion, 30)) != 0:
-                    inv_strings[row][column].set(f"R{result}")
+                    update_inventory(client, inv_strings, row, column, "R", dose=result)
                 elif (result := itemCheck(color_array, color_absorption_pot, 15)) != 0:
-                    inv_strings[row][column].set(f"A{result}")
+                    update_inventory(client, inv_strings, row, column, "A", dose=result)
                 elif (result := itemCheck(color_array, color_strength_pot, 15)) != 0:
-                    inv_strings[row][column].set(f"S{result}")
+                    update_inventory(client, inv_strings, row, column, "S", dose=result)
                 elif (result := itemCheck(color_array, color_overload_pot, 10)) != 0:
-                    inv_strings[row][column].set(f"O{result}")
+                    update_inventory(client, inv_strings, row, column, "O", dose=result)
                 elif (itemCheck(color_array, color_inv_empty, 15)) == 4:
-                    inv_strings[row][column].set('-')
+                    update_inventory(client, inv_strings, row, column, '-')
                 else:
-                    inv_strings[row][column].set('?')
+                    update_inventory(client, inv_strings, row, column, '?')
                 x += 42
             one_dose += 36
 
 
-def readTab(client, sentinel, dc):
+def update_inventory(client, inv_strings, row, column, contents, dose=0):
+    if dose == 0:
+        inv_strings[row][column].set(contents)
+    else:
+        inv_strings[row][column].set(f"{contents}{dose}")
+    client.inventory[row][column].contents = contents
+
+
+def readTab(client, script, dc):
     item_tab_color = dc.GetPixel(*coord_item_tab_check)
     prayer_tab_color = dc.GetPixel(*coord_prayer_tab_check)
 
     if pixelMatchesColor(item_tab_color, color_tab_selected, tolerance=10):
         client.tab = 'Items'
-        sentinel.strings['inventory'].set('On items tab.')
+        script.strings['inventory'].set('On items tab.')
 
     elif pixelMatchesColor(prayer_tab_color, color_tab_selected, tolerance=10):
         client.tab = 'Prayer'
-        sentinel.strings['inventory'].set('On prayer tab.')
+        script.strings['inventory'].set('On prayer tab.')
     else:
         client.tab = 'Unknown'
-        sentinel.strings['inventory'].set('On unknown tab.')
+        script.strings['inventory'].set('On unknown tab.')
 
 
-def readBuffPot(client, sentinel, dc):
-    if not sentinel.drinking_buff:
+def readBuffPot(client, script, dc):
+    if not script.drinking_buff:
         # Checks if buff is in double digits still
         current_pixel = 123
         previous_color = 0
@@ -131,85 +166,60 @@ def readBuffPot(client, sentinel, dc):
             current_pixel += 1
 
         if green_lines == 2:
-            sentinel.strings['buff'].set('>=10 remaining')
+            script.strings['buff'].set('>=10 remaining')
             client.buffed = True
         elif green_lines == 1:
-            sentinel.strings['buff'].set('<=9 remaining')
+            script.strings['buff'].set('<=9 remaining')
             client.buffed = False
         else:
-            sentinel.strings['buff'].set('???')
+            script.strings['buff'].set('???')
             client.buffed = False
 
 
-def resize_image(image):
-    basewidth = 75
-    wpercent = (basewidth / float(image.size[0]))
-    hsize = int((float(image.size[1]) * float(wpercent)))
-    img = image.resize((basewidth, hsize), Image.ANTIALIAS)
+def process_image(img, resize=False):
+    if resize:
+        base_width = 75
+        w_percent = (base_width / float(img.size[0]))
+        h_size = int((float(img.size[1]) * float(w_percent)))
+        img = img.resize((base_width, h_size), Image.ANTIALIAS)
+    img = np.array(img)
     return img
 
 
-def read_buff_1(client, sentinel, ocr):
-    left = 27 + client.rectangle.left
-    top = 95 + client.rectangle.top
-    width = 29
-    height = 12
-    absorb_region = (left, top, width, height,)
-    img = pyautogui.screenshot(region=absorb_region)
-    img = resize_image(img)
-    img = np.array(img)
+def read_nmz_pot(client, script, ocr, pot_region):
+    img = pyautogui.screenshot(region=pot_region)
+    img = process_image(img, resize=True)
     word = ocr.readtext(img, allowlist='0123456789', detail=0)
-    if len(word) != 0:
+
+    if word:
         client.inNMZ = True
         word = word[0]
-        if not sentinel.drinking_absorbs:
-            sentinel.strings['absorption'].set(f"{word} Remaining")
+        if not script.drinking_absorbs:
+            script.strings['absorption'].set(f"{word} Remaining")
         client.absorbs = int(word)
     else:
         client.inNMZ = False
 
 
-def read_buff_2(client, sentinel, ocr):
-    left = 90 + client.rectangle.left
-    top = 95 + client.rectangle.top
-    width = 29
-    height = 12
-    absorb_region = (left, top, width, height,)
-    img = pyautogui.screenshot(region=absorb_region)
-    img = resize_image(img)
-    img = np.array(img)
-    word = ocr.readtext(img, allowlist='0123456789', detail=0)
-    if len(word) != 0:
-        client.inNMZ = True
-        word = word[0]
-        if not sentinel.drinking_absorbs:
-            sentinel.strings['absorption'].set(f"{word} Remaining")
-        client.absorbs = int(word)
-    else:
-        client.inNMZ = False
-
-
-def readHealth(client, sentinel, ocr):
+def readHealth(client, script, ocr):
     left = 524 + client.rectangle.left
     top = 82 + client.rectangle.top
-    width = 545 - 524
-    height = 95 - 82
-    hp_region = (left, top, width, height,)
+    # Params are ( left, top, width, height )
+    hp_region = (left, top, 21, 13,)
 
+    # Thresholds to isolate health text in HSV color space
     low_thresh = (60, 160, 160)
     high_thresh = (255, 260, 260)
 
     img = pyautogui.screenshot(region=hp_region)
-    img = np.array(resize_image(img))
+    img = process_image(img, resize=True)
 
     hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv_img, low_thresh, high_thresh)
     blur = cv2.GaussianBlur(mask, (7, 7), 0)
-    word = ocr.readtext(blur, allowlist='0123456789', detail=0)
+    ocr_hp = ocr.readtext(blur, allowlist='0123456789', detail=0)
 
-    if len(word) != 0:
-        word = word[0]
-        sentinel.strings['health'].set(f"{word} hp")
-        client.hp = int(word)
-
-
+    if ocr_hp:
+        ocr_hp = ocr_hp[0]
+        script.strings['health'].set(f"{ocr_hp} hp")
+        client.hp = int(ocr_hp)

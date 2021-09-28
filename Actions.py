@@ -8,8 +8,8 @@ import win32ui
 from utils import *
 
 
-def testt(client, sentinel):
-    invent = getInventoryLocations(client, sentinel, 'A')
+def testt(client, script):
+    invent = getInventoryLocations(client, script, 'A')
     if len(invent) > 3:
         invent = invent[:3]
     if len(invent) != 0:
@@ -18,8 +18,7 @@ def testt(client, sentinel):
             time.sleep(.3)
 
 
-def NMZ(client, sentinel):
-    client.setFocus()
+def NMZ(client, script):
 
     while True:
         if not client.inNMZ:
@@ -28,110 +27,153 @@ def NMZ(client, sentinel):
                 if client.inNMZ:
                     continue
                 if timer == 10:
-                    sentinel.active = False
-                    sentinel.post("NMZ not found.")
+                    script.active = False
+                    script.post("NMZ not found.")
                     time.sleep(getSleepTRNV(3))
-                    logout(client, sentinel)
+                    logout(client, script)
                     sys.exit()
                 time.sleep(1)
                 timer += 1
 
-        if not sentinel.drinking_absorbs and client.absorbs_remaining and client.absorbs <= 250:
-            threading.Thread(target=drinkAbsorption, args=(client, sentinel), daemon=True).start()
+        if not script.drinking_absorbs and client.check_pot('A') and client.absorbs <= 250:
+            threading.Thread(target=drinkAbsorption, args=(client, script), daemon=True).start()
 
-        if not sentinel.drinking_buff and client.buffs_remaining and not client.buffed:
-            threading.Thread(target=drinkBuff, args=(client, sentinel), daemon=True).start()
+        if not script.drinking_buff and client.check_pot(script.style) and not client.buffed:
+            threading.Thread(target=drinkBuff, args=(client, script), daemon=True).start()
 
-        if not sentinel.eating and client.hp > 1:
-            threading.Thread(target=eatRockCake, args=(client, sentinel), daemon=True).start()
+        if not script.eating and client.hp > 1:
+            threading.Thread(target=eatRockCake, args=(client, script), daemon=True).start()
 
-        if not sentinel.flicking:
-            threading.Thread(target=flickRapidHeal, args=(client, sentinel), daemon=True).start()
+        if not script.flicking:
+            threading.Thread(target=flickRapidHeal, args=(client, script), daemon=True).start()
 
         time.sleep(1)
 
 
-def overload(client, sentinel):
+def overload(client, script):
     while True:
         if not client.inNMZ:
-            sentinel.active = False
-            sentinel.post("NMZ not found.")
-            time.sleep(getSleepTRNV(3))
-            logout(client, sentinel)
-            sys.exit()
+            timer = 0
+            while timer <= 10:
+                if client.inNMZ:
+                    continue
+                if timer == 10:
+                    script.active = False
+                    script.post("NMZ not found.")
+                    time.sleep(getSleepTRNV(3))
+                    logout(client, script)
+                    sys.exit()
+                time.sleep(1)
+                timer += 1
 
-        if not sentinel.flicking and not sentinel.overload_soon:
-            threading.Thread(target=flickRapidHeal, args=(client, sentinel), daemon=True).start()
+        if script.overload_time_left <= 45 and client.check_pot('O'):
+            script.overloading = True
+            threading.Thread(target=flickRapidHeal, args=(client, script), kwargs={'sleep_time': .1}, daemon=True).start()
+            if not script.eating and client.hp > 1:
+                threading.Thread(target=eatRockCake, args=(client, script), kwargs={'sleep_time': .1}, daemon=True).start()
+            if not script.drinking_absorbs and client.check_pot('A') and client.absorbs <= 250:
+                threading.Thread(target=drinkAbsorption, args=(client, script), kwargs={'sleep_time': .1}, daemon=True).start()
+            in_place = False
+            while time_left := script.overload_time_left <= 45:
+                with script.lock:
+                    if 15 <= time_left <= 25 and not in_place:
+                        moveToTab(client, "Prayer")
+                        time.sleep(getSleepTRNV(.2))
+                        moveMouse(getTRNVCoord(client.rect_melee_prayer))
+                    if time_left <= 1:
+                        pyautogui.click()
+                        moveToTab(client, "Items")
+                        overload_pots = getInventoryLocations(client, script, 'O')
+                        if len(overload_pots) != 0:
+                            moveMouse(overload_pots[0])
+                            time.sleep(getSleepTRNV(.15))
+                            pyautogui.click()
 
-        if not sentinel.drinking_absorbs and client.absorbs_remaining and client.absorbs <= 250\
-                and not sentinel.overload_soon:
-            threading.Thread(target=drinkAbsorption, args=(client, sentinel), daemon=True).start()
+                            while not script.overloaded:
+                                time.sleep(getSleepTRNV(.05))
+                                pyautogui.click()
+                            time.sleep(getSleepTRNV(.3))
+                            moveToTab(client, "Prayer")
+                            time.sleep(getSleepTRNV(.2))
+                            moveMouse(getTRNVCoord(client.rect_melee_prayer))
+                            pyautogui.click()
+                            moveOffScreen(client, script)
+                        else:
+                            script.overloading = False
+                            continue
 
-        if not sentinel.drinking_buff and client.buffs_remaining and not client.buffed and not sentinel.overload_soon:
-            threading.Thread(target=drinkBuff, args=(client, sentinel), daemon=True).start()
+        if not script.flicking and not script.overloading:
+            threading.Thread(target=flickRapidHeal, args=(client, script), daemon=True).start()
 
-        if not sentinel.eating and client.hp > 1:
-            threading.Thread(target=eatRockCake, args=(client, sentinel), daemon=True).start()
+        if not script.drinking_absorbs and client.check_pot('A') and client.absorbs <= 250\
+                and not script.overloading:
+            threading.Thread(target=drinkAbsorption, args=(client, script), daemon=True).start()
+
+        if not script.drinking_buff and client.check_pot('O') and not client.buffed and not script.overloading:
+            threading.Thread(target=drinkBuff, args=(client, script), daemon=True).start()
+
+        if not script.eating and client.hp > 1 and not script.overloading:
+            threading.Thread(target=eatRockCake, args=(client, script), daemon=True).start()
 
 
-def drinkBuff(client, sentinel):
-    sentinel.drinking_buff = True
-    sleep_duration = round(getSleepTRNV(60))
+def drinkBuff(client, script, sleep_time=60):
+    script.drinking_buff = True
+    sleep_duration = round(getSleepTRNV(sleep_time))
     for timer in range(sleep_duration):
-        if not sentinel.active:
-            sentinel.drinking_buff = False
+        if not script.active:
+            script.drinking_buff = False
             sys.exit()
         if timer > (sleep_duration - 5):
-            sentinel.moving_soon['buff'] = True
-        sentinel.strings['buff'].set(f"{timer}/{sleep_duration} Waiting to drink.")
+            script.moving_soon['buff'] = True
+        script.strings['buff'].set(f"{timer}/{sleep_duration} Waiting to drink.")
         time.sleep(1)
 
-    sentinel.moving_soon['buff'] = False
-    while sentinel.check_moving_soon():
+    script.moving_soon['buff'] = False
+    while script.check_moving_soon():
         time.sleep(.3)
 
-    sentinel.strings['buff'].set("Waiting on other movement.")
-    with sentinel.lock:
-        sentinel.strings['buff'].set("Drinking.")
-        sentinel.post("Drinking buff pot.")
+    script.strings['buff'].set("Waiting on other movement.")
+    with script.lock:
+        script.strings['buff'].set("Drinking.")
+        script.post("Drinking buff pot.")
         moveToTab(client, "Items")
         time.sleep(getSleepTRNV(1))
-        buffs = getInventoryLocations(client, sentinel, sentinel.style)
+        buffs = getInventoryLocations(client, script, script.style)
         if len(buffs) != 0:
             moveMouse(buffs[0])
             time.sleep(getSleepTRNV(.5))
             pyautogui.click()
             time.sleep(getSleepTRNV(.05))
         else:
-            sentinel.drinking_buff = False
+            script.drinking_buff = False
             sys.exit()
+    if not script.overloading:
+        moveOffScreen(client, script)
+    script.drinking_buff = False
 
-    moveOffScreen(client, sentinel)
-    sentinel.drinking_buff = False
 
-
-def drinkAbsorption(client, sentinel):
-    sentinel.drinking_absorbs = True
-    sleep_duration = round(getSleepTRNV(70))
+def drinkAbsorption(client, script, sleep_time=70):
+    script.drinking_absorbs = True
+    sleep_duration = round(getSleepTRNV(sleep_time))
     for timer in range(sleep_duration):
-        if not sentinel.active:
-            sentinel.drinking_absorbs = False
+        if not script.active:
+            script.drinking_absorbs = False
             sys.exit()
         if timer > (sleep_duration - 5):
-            sentinel.moving_soon['absorb'] = True
-        sentinel.strings['absorption'].set(f"{timer}/{sleep_duration} Waiting to drink.")
+            script.moving_soon['absorb'] = True
+        script.strings['absorption'].set(f"{timer}/{sleep_duration} Waiting to drink.")
         time.sleep(1)
 
-    sentinel.moving_soon['absorb'] = False
-    while sentinel.check_moving_soon():
+    script.moving_soon['absorb'] = False
+    while script.check_moving_soon():
         time.sleep(.3)
 
-    sentinel.strings['absorption'].set("Waiting.")
-    with sentinel.lock:
-        sentinel.post("Drinking absorption pot.")
+    script.strings['absorption'].set("Waiting.")
+    with script.lock:
+        script.post("Drinking absorption pot.")
         moveToTab(client, "Items")
         time.sleep(getSleepTRNV(.3))
-        absorbs = getInventoryLocations(client, sentinel, "A")  # Gets list of absorbs
+        absorbs = getInventoryLocations(client, script, "A")  # Gets list of absorbs
         if len(absorbs) > 3:  # Drinks up to 3 absorbs
             absorbs = absorbs[:3]
         if len(absorbs) != 0:
@@ -142,35 +184,35 @@ def drinkAbsorption(client, sentinel):
                     pyautogui.click()
                     time.sleep(getSleepTRNV(.05))
             else:
-                sentinel.drinking_absorbs = False
+                script.drinking_absorbs = False
                 sys.exit()
         time.sleep(getSleepTRNV(.5))
+    if not script.overloading:
+        moveOffScreen(client, script)
+    script.drinking_absorbs = False
 
-    moveOffScreen(client, sentinel)
-    sentinel.drinking_absorbs = False
 
-
-def flickRapidHeal(client, sentinel):
-    sentinel.flicking = True
+def flickRapidHeal(client, script, sleep_time=52):
+    script.flicking = True
     # Start waiting ~1 minute before flicking rapid heal
-    sleep_duration = round(getSleepTRNV(52))
+    sleep_duration = round(getSleepTRNV(sleep_time))
     for timer in range(sleep_duration):
-        if not sentinel.active:
-            sentinel.flicking = False
+        if not script.active:
+            script.flicking = False
             sys.exit()
         if timer > (sleep_duration - 5):
-            sentinel.moving_soon['flicking'] = True
-        sentinel.strings['status'].set(f"{timer}/{sleep_duration - 1} Waiting to flick.")
+            script.moving_soon['flicking'] = True
+        script.strings['status'].set(f"{timer}/{sleep_duration - 1} Waiting to flick.")
         time.sleep(1)
 
-    sentinel.moving_soon['flicking'] = False
-    while sentinel.check_moving_soon():
+    script.moving_soon['flicking'] = False
+    while script.check_moving_soon():
         time.sleep(.3)
 
-    with sentinel.lock:
+    with script.lock:
         # Small chance to go directly to prayer tab
         if random.randrange(1, 10) == 1:
-            sentinel.post("Moving to prayer tab to flick. (1/10 odds)")
+            script.post("Moving to prayer tab to flick. (1/10 odds)")
             # Set rapid heal rect
             coords = getTRNVCoord(client.rect_rapid_heal)
             # Go to prayer tab if necessary
@@ -180,7 +222,7 @@ def flickRapidHeal(client, sentinel):
             # Set quick pray rect.
             coords = getTRNVCoord(client.rect_quick_pray)
 
-        sentinel.post("Flicking rapid heal now.")
+        script.post("Flicking rapid heal now.")
         # Move to prayer spot.
         moveMouse(coords)
         time.sleep(getSleepTRNV(.15))
@@ -192,33 +234,34 @@ def flickRapidHeal(client, sentinel):
 
         # Move off screen
         time.sleep(getSleepTRNV(.15))
-    moveOffScreen(client, sentinel)
-    sentinel.flicking = False
+    if not script.overloading:
+        moveOffScreen(client, script)
+    script.flicking = False
 
 
-def eatRockCake(client, sentinel):
-    sentinel.eating = True
+def eatRockCake(client, script, sleep_time=.3):
+    script.eating = True
     # Wait for timer to eat rock cake.
-    sleep_duration = round(getSleepTRNV(.1))
+    sleep_duration = round(getSleepTRNV(sleep_time))
     for timer in range(sleep_duration):
-        if not sentinel.active:
-            sentinel.eating = False
+        if not script.active:
+            script.eating = False
             sys.exit()
         if timer > (sleep_duration - 5):
-            sentinel.moving_soon['eating'] = True
-        sentinel.strings['health'].set(f"{timer}/{sleep_duration} Waiting to guzzle rock cake.")
+            script.moving_soon['eating'] = True
+        script.strings['health'].set(f"{timer}/{sleep_duration} Waiting to guzzle rock cake.")
         time.sleep(1)
 
-    sentinel.moving_soon['eating'] = False
-    while sentinel.check_moving_soon():
+    script.moving_soon['eating'] = False
+    while script.check_moving_soon():
         time.sleep(.3)
 
-    with sentinel.lock:
-        sentinel.post("Guzzling rock cake.")
+    with script.lock:
+        script.post("Guzzling rock cake.")
 
         moveToTab(client, 'Items')
         time.sleep(getSleepTRNV(.1))
-        rock = getInventoryLocations(client, sentinel, '(*)')
+        rock = getInventoryLocations(client, script, '(*)')
         if len(rock) != 0:
             moveMouse(rock[0])
             time.sleep(getSleepTRNV(.1))
@@ -230,17 +273,17 @@ def eatRockCake(client, sentinel):
             pyautogui.click()
             time.sleep(getSleepTRNV(.2))
         else:
-            sentinel.eating = False
+            script.eating = False
             sys.exit()
+    if not script.overloading:
+        moveOffScreen(client, script)
+    script.eating = False
 
-    moveOffScreen(client, sentinel)
-    sentinel.eating = False
 
-
-def logout(client, sentinel):
+def logout(client, script):
     time.sleep(getSleepTRNV(10))
-    with sentinel.lock:
-        sentinel.post("Logging out.")
+    with script.lock:
+        script.post("Logging out.")
         moveToTab(client, 'Logout')
         time.sleep(getSleepTRNV(.2))
         moveMouse(getTRNVCoord(client.rect_logout_button))
@@ -248,22 +291,22 @@ def logout(client, sentinel):
         pyautogui.click()
         time.sleep(getSleepTRNV(.1))
         pyautogui.click()
-        moveOffScreen(client, sentinel)
+        moveOffScreen(client, script)
 
 
-def getInventoryLocations(client, sentinel, item):
+def getInventoryLocations(client, script, item):
     inventory = []
     for row in range(7):
         for column in range(4):
-            if item in sentinel.inv_strings[row][column].get():
+            if item in script.inv_strings[row][column].get():
                 inventory.append(getTRNVCoord(client.inventory[row][column].rect))
 
     return inventory
 
 
-def moveOffScreen(client, sentinel):  # Must have movement lock in calling function to call
-    if not sentinel.lock.locked():
-        with sentinel.lock:
+def moveOffScreen(client, script):  # Must have movement lock in calling function to call
+    if not script.lock.locked():
+        with script.lock:
             moveMouse((client.rectangle.right + 10, client.rectangle.top + getSleepTRNV(300),))
             time.sleep(getSleepTRNV(.3))
             pyautogui.click()
@@ -291,15 +334,15 @@ def moveToTab(client, tab):  # Only call with movement lock.
             pyautogui.click()
 
 
-def login(client, sentinel):  # Takes control of the mouse and keyboard to login to Runelite.
-    sentinel.post('Beginning login script.')
+def login(client, script):  # Takes control of the mouse and keyboard to login to Runelite.
+    script.post('Beginning login script.')
     readPassword()
     client.setFocus()
     window = win32ui.FindWindow(None, "RuneLite")
     dc = window.GetWindowDC()
     current_color = dc.GetPixel(*coord_login_box_check)
     if pixelMatchesColor(current_color, color_user_box_is_present, tolerance=10):
-        sentinel.post("Clicking \"Existing user\" box.")
+        script.post("Clicking \"Existing user\" box.")
         moveMouse(client.coord_existing_user)
         time.sleep(getSleepTRNV(.4))
         pyautogui.click()
@@ -308,11 +351,11 @@ def login(client, sentinel):  # Takes control of the mouse and keyboard to login
     time.sleep(getSleepTRNV(.2))
     pyautogui.click()
     time.sleep(getSleepTRNV(.2))
-    sentinel.post('Pasting saved password.')
+    script.post('Pasting saved password.')
     pyautogui.keyDown('ctrl')
     pyautogui.press('v')
     pyautogui.keyUp('ctrl')
-    sentinel.post('Ready to log in.')
+    script.post('Ready to log in.')
 
 
 def autoAlch(client, string_var, lock):
