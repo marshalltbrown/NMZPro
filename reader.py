@@ -160,7 +160,7 @@ def readBuffPot(client, script, dc):
             green_lines += 1
         previous_color = current_color
         current_pixel += 1
-
+    # TODO: some sort of method to limit false returns while client is moved.
     if green_lines == 2:
         script.strings['buff'].set('>=10 remaining')
         client.buffed = True
@@ -195,7 +195,8 @@ def read_nmz_pot(client, script, ocr, pot_region):
 
     if word:
         client.inNMZ = True
-        client.absorbs = int(word[0])
+        if len(word[0]) == 3:  # TODO: A better way to weed out wrong results?
+            client.absorbs = int(word[0])
     else:
         client.inNMZ = False
 
@@ -219,8 +220,9 @@ def readHealth(client, script, ocr):
     mask = cv2.inRange(hsv_img, low_thresh, high_thresh)
     blur = cv2.GaussianBlur(mask, (7, 7), 0)
     ocr_hp = ocr.readtext(blur, allowlist='0123456789', detail=0)
-
+    # TODO: if the value is too far off it shouldnt register
     if ocr_hp:
         ocr_hp = ocr_hp[0]
         # script.strings['health'].set(f"{ocr_hp} hp")
         client.hp = int(ocr_hp)
+

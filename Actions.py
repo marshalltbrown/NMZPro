@@ -18,7 +18,7 @@ def NMZ(client, script):
 
         nmz_check(client, script)
         moved_this_loop = False
-
+        # TODO if other scripts are run, may as well flick? human like?
         if client.hp > 1 and (rock := client.get_items('(*)')):
             eatRockCake(client, script, rock)
             moved_this_loop = True
