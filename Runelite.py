@@ -1,4 +1,8 @@
+import random
+
 from pywinauto.application import Application
+
+from utils import getTRNVCoord
 
 
 class runelite:
@@ -34,6 +38,15 @@ class runelite:
         self.coord_existing_user = (395+self.offset[0], 315+self.offset[1],)
 
         self.inventory = self.init_inventory()
+
+    def get_items(self, item):
+        inventory = []
+        for row in range(7):
+            for column in range(4):
+                if item in inventory[row][column].contents:
+                    inventory.append(getTRNVCoord(self.inventory[row][column].rect))
+
+        return inventory
 
     def update_location(self) -> None:
         r = self.client.rectangle()
@@ -107,3 +120,15 @@ class rectangle:
         self.right = bottom_right[0] + offset_x
         self.bottom = bottom_right[1] + offset_y
         self.center = (((self.left + self.right) / 2), ((self.top + self.bottom) / 2),)
+
+
+class tab:  # TODO: Finish implementing proper tab objects for code clarity
+    def __init__(self, name: str, is_selected: bool, top_left, bottom_right, offset):
+        self.name = name
+        self.tl = top_left
+        self.br = bottom_right
+        self.selected = is_selected
+        self.rect = rectangle(self.tl, self.br, offset)
+
+    def set_rect(self, offset) -> None:
+        self.rect = rectangle(self.tl, self.br, offset)

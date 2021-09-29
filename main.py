@@ -10,8 +10,8 @@ from reader import reader, overload_tracker
 
 def test():
 
-    boss = admin('O', string_vars, lock, inventory_table)
-    threading.Thread(target=overload_tracker, args=(client, boss,), daemon=True).start()
+    boss = admin('R', string_vars, lock, inventory_table)
+    threading.Thread(target=reader, args=(client, boss,), daemon=True).start()
     time.sleep(1)
     # threading.Thread(target=testt, args=(client, boss,), daemon=True).start()
 

@@ -4,7 +4,7 @@ import win32ui
 from PIL import Image
 import numpy as np
 from pywinauto import Application
-
+import time
 from utils import *
 import pyautogui
 from easyocr import Reader
@@ -45,6 +45,7 @@ def read_overload(im):
 
 
 def reader(client, script):
+
     mouse = Controller()
     window = win32ui.FindWindow(None, "RuneLite")
     ocr = Reader(['en'], gpu=True)
@@ -52,6 +53,7 @@ def reader(client, script):
     # Params are ( left, top, width, height )
     left_pot_region = (27 + client.rectangle.left, 95 + client.rectangle.top, 29, 12,)
     right_pot_region = (90 + client.rectangle.left, 95 + client.rectangle.top, 29, 12,)
+    print("Reader and dependencies initialized.")
 
     while script.active:
         try:
@@ -60,10 +62,10 @@ def reader(client, script):
             
             # Check if the window has moved. If so, update client rectangles
             client.update_location()
-            
+
             # Reads between 3 useful tabs to see which is active
             readTab(client, script, dc)
-            
+
             # If in overload mode, absorptions are on the box to the left
             if script.style == 'O':
                 if script.overloaded:
@@ -78,14 +80,15 @@ def reader(client, script):
             # OCR health
             readHealth(client, script, ocr)
 
-            # If mouse is not in the inventory window then read the inventory
-            pos = mouse.position
-            if pos[0] >= client.rectangle.right or pos[1] <= 207+client.rectangle.top:
+            # If mouse is not in the inventory grid then read the inventory
+            x, y = mouse.position
+            rect = client.rectangle
+            if not (rect.left+735 > x > rect.left+561) or not (rect.bottom > y > rect.top+207):
                 readInventory(client, script.inv_strings, dc)
 
             # Delete the DC to refresh for next run and prevent memory leaks
             dc.DeleteDC()
-            
+
         except Exception as e:
             print(e)
         time.sleep(.3)
@@ -108,26 +111,26 @@ def readInventory(client, inv_strings, dc):
                     dc.GetPixel(x, one_dose - 12)
                 ]
                 if itemCheck(color_array, color_dwarven_rock, 10) == 4:
-                    update_inventory(client, inv_strings, row, column, '(*)')
+                    update_pot_in_inv(client, inv_strings, row, column, '(*)')
                 elif (itemCheck(color_array, color_empty_potion, 8)) == 4:
-                    update_inventory(client, inv_strings, row, column, 'X')
+                    update_pot_in_inv(client, inv_strings, row, column, 'X')
                 elif (result := itemCheck(color_array, color_range_potion, 30)) != 0:
-                    update_inventory(client, inv_strings, row, column, "R", dose=result)
+                    update_pot_in_inv(client, inv_strings, row, column, "R", dose=result)
                 elif (result := itemCheck(color_array, color_absorption_pot, 15)) != 0:
-                    update_inventory(client, inv_strings, row, column, "A", dose=result)
+                    update_pot_in_inv(client, inv_strings, row, column, "A", dose=result)
                 elif (result := itemCheck(color_array, color_strength_pot, 15)) != 0:
-                    update_inventory(client, inv_strings, row, column, "S", dose=result)
+                    update_pot_in_inv(client, inv_strings, row, column, "S", dose=result)
                 elif (result := itemCheck(color_array, color_overload_pot, 10)) != 0:
-                    update_inventory(client, inv_strings, row, column, "O", dose=result)
+                    update_pot_in_inv(client, inv_strings, row, column, "O", dose=result)
                 elif (itemCheck(color_array, color_inv_empty, 15)) == 4:
-                    update_inventory(client, inv_strings, row, column, '-')
+                    update_pot_in_inv(client, inv_strings, row, column, '-')
                 else:
-                    update_inventory(client, inv_strings, row, column, '?')
+                    update_pot_in_inv(client, inv_strings, row, column, '?')
                 x += 42
             one_dose += 36
 
 
-def update_inventory(client, inv_strings, row, column, contents, dose=0):
+def update_pot_in_inv(client, inv_strings, row, column, contents, dose=0):
     if dose == 0:
         inv_strings[row][column].set(contents)
     else:

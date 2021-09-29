@@ -9,7 +9,7 @@ from utils import *
 
 
 def testt(client, script):
-    invent = getInventoryLocations(client, script, 'A')
+    invent = client.get_items('A')
     if len(invent) > 3:
         invent = invent[:3]
     if len(invent) != 0:
@@ -19,6 +19,9 @@ def testt(client, script):
 
 
 def NMZ(client, script):
+    mouse = Controller()
+    flick_time_threshold = time.time()
+    absorb_threshold = getTRNV(250, 180, 300)
 
     while True:
         if not client.inNMZ:
@@ -35,17 +38,24 @@ def NMZ(client, script):
                 time.sleep(1)
                 timer += 1
 
-        if not script.drinking_absorbs and client.check_pot('A') and client.absorbs <= 250:
-            threading.Thread(target=drinkAbsorption, args=(client, script), daemon=True).start()
+        if client.hp > 1 and (rock := client.get_items('(*)')):
+            eatRockCake(client, script, rock)
 
-        if not script.drinking_buff and client.check_pot(script.style) and not client.buffed:
-            threading.Thread(target=drinkBuff, args=(client, script), daemon=True).start()
+        if time.time() >= flick_time_threshold:
+            flickRapidHeal(client, script)
+            flick_time_threshold = time.time() + getSleepTRNV(57)
 
-        if not script.eating and client.hp > 1:
-            threading.Thread(target=eatRockCake, args=(client, script), daemon=True).start()
+        if client.absorbs <= absorb_threshold and (pots := client.get_items('A')):
+            drinkAbsorption(client, script, pots)
+            absorb_threshold = getTRNV(250, 180, 300)
 
-        if not script.flicking:
-            threading.Thread(target=flickRapidHeal, args=(client, script), daemon=True).start()
+        if not client.buffed and (pots := client.get_items(client.style)):
+            drinkBuff(client, script, pots)
+
+        x, y = mouse.position
+        if client.rectangle.left < x < client.rectangle.right \
+                and client.rectangle.top < y < client.rectangle.bottom:
+            moveOffScreen(client, script)
 
         time.sleep(1)
 
@@ -83,7 +93,7 @@ def overload(client, script):
                     if time_left <= 1:
                         pyautogui.click()
                         moveToTab(client, "Items")
-                        overload_pots = getInventoryLocations(client, script, 'O')
+                        overload_pots = client.get_items('O')
                         if len(overload_pots) != 0:
                             moveMouse(overload_pots[0])
                             time.sleep(getSleepTRNV(.15))
@@ -116,100 +126,58 @@ def overload(client, script):
             threading.Thread(target=eatRockCake, args=(client, script), daemon=True).start()
 
 
-def drinkBuff(client, script, sleep_time=60):
-    script.drinking_buff = True
-    sleep_duration = round(getSleepTRNV(sleep_time))
-    for timer in range(sleep_duration):
-        if not script.active:
-            script.drinking_buff = False
-            sys.exit()
-        if timer > (sleep_duration - 5):
-            script.moving_soon['buff'] = True
-        script.strings['buff'].set(f"{timer}/{sleep_duration} Waiting to drink.")
-        time.sleep(1)
+def drinkBuff(client, script, buffs) -> None:  # Done
 
-    script.moving_soon['buff'] = False
-    while script.check_moving_soon():
-        time.sleep(.3)
-
-    script.strings['buff'].set("Waiting on other movement.")
     with script.lock:
-        script.strings['buff'].set("Drinking.")
+
         script.post("Drinking buff pot.")
+
+        # Move to tab
         moveToTab(client, "Items")
         time.sleep(getSleepTRNV(1))
-        buffs = getInventoryLocations(client, script, script.style)
-        if len(buffs) != 0:
-            moveMouse(buffs[0])
-            time.sleep(getSleepTRNV(.5))
-            pyautogui.click()
-            time.sleep(getSleepTRNV(.05))
-        else:
-            script.drinking_buff = False
-            sys.exit()
-    if not script.overloading:
-        moveOffScreen(client, script)
-    script.drinking_buff = False
+
+        # Move to 1st buff pot
+        moveMouse(buffs[0])
+        time.sleep(getSleepTRNV(.5))
+
+        # Click buff pot
+        pyautogui.click()
+        time.sleep(getSleepTRNV(.1))
+
+        script.post("Buff pot drank.")
 
 
-def drinkAbsorption(client, script, sleep_time=70):
-    script.drinking_absorbs = True
-    sleep_duration = round(getSleepTRNV(sleep_time))
-    for timer in range(sleep_duration):
-        if not script.active:
-            script.drinking_absorbs = False
-            sys.exit()
-        if timer > (sleep_duration - 5):
-            script.moving_soon['absorb'] = True
-        script.strings['absorption'].set(f"{timer}/{sleep_duration} Waiting to drink.")
-        time.sleep(1)
+def drinkAbsorption(client, script, pots) -> None:  # Done
 
-    script.moving_soon['absorb'] = False
-    while script.check_moving_soon():
-        time.sleep(.3)
-
-    script.strings['absorption'].set("Waiting.")
     with script.lock:
+
         script.post("Drinking absorption pot.")
+
+        # Move to tab
         moveToTab(client, "Items")
         time.sleep(getSleepTRNV(.3))
-        absorbs = getInventoryLocations(client, script, "A")  # Gets list of absorbs
-        if len(absorbs) > 3:  # Drinks up to 3 absorbs
-            absorbs = absorbs[:3]
-        if len(absorbs) != 0:
-            for i in range(len(absorbs)):  # Moves to absorb
-                moveMouse(absorbs[i])
-                time.sleep(.3)
-                for _1 in range(round(getTRNV(15, 13, 17))):  # Clicks absorb pot
-                    pyautogui.click()
-                    time.sleep(getSleepTRNV(.05))
-            else:
-                script.drinking_absorbs = False
-                sys.exit()
-        time.sleep(getSleepTRNV(.5))
-    if not script.overloading:
-        moveOffScreen(client, script)
-    script.drinking_absorbs = False
+
+        # Limits pots to click to 3
+        if len(pots) > 3:
+            pots = pots[:3]
+
+        # Loop to move to first 3 absorbs and drink each of them
+        for i in range(len(pots)):  # Moves to absorb
+            moveMouse(pots[i])
+            time.sleep(.3)
+            for _ in range(round(getTRNV(15, 13, 17))):  # Clicks absorb pot a psuedo random number of times.
+                pyautogui.click()
+                time.sleep(getSleepTRNV(.05))
+
+        script.post("Absorb pot drank.")
+
+        time.sleep(getSleepTRNV(.1))
 
 
-def flickRapidHeal(client, script, sleep_time=52):
-    script.flicking = True
-    # Start waiting ~1 minute before flicking rapid heal
-    sleep_duration = round(getSleepTRNV(sleep_time))
-    for timer in range(sleep_duration):
-        if not script.active:
-            script.flicking = False
-            sys.exit()
-        if timer > (sleep_duration - 5):
-            script.moving_soon['flicking'] = True
-        script.strings['status'].set(f"{timer}/{sleep_duration - 1} Waiting to flick.")
-        time.sleep(1)
-
-    script.moving_soon['flicking'] = False
-    while script.check_moving_soon():
-        time.sleep(.3)
+def flickRapidHeal(client, script) -> None:  # Done
 
     with script.lock:
+
         # Small chance to go directly to prayer tab
         if random.randrange(1, 10) == 1:
             script.post("Moving to prayer tab to flick. (1/10 odds)")
@@ -223,115 +191,110 @@ def flickRapidHeal(client, script, sleep_time=52):
             coords = getTRNVCoord(client.rect_quick_pray)
 
         script.post("Flicking rapid heal now.")
-        # Move to prayer spot.
+
+        # Move to prayer location. ( Either quick pray or actual rapid heal )
         moveMouse(coords)
         time.sleep(getSleepTRNV(.15))
 
-        # Flick prayer.
+        # Flick ( Double click) prayer location. ( Either quick pray or actual rapid heal )
         pyautogui.click()
         time.sleep(getSleepTRNV(.6))
         pyautogui.click()
-
-        # Move off screen
         time.sleep(getSleepTRNV(.15))
-    if not script.overloading:
-        moveOffScreen(client, script)
-    script.flicking = False
 
 
-def eatRockCake(client, script, sleep_time=.3):
-    script.eating = True
-    # Wait for timer to eat rock cake.
-    sleep_duration = round(getSleepTRNV(sleep_time))
-    for timer in range(sleep_duration):
-        if not script.active:
-            script.eating = False
-            sys.exit()
-        if timer > (sleep_duration - 5):
-            script.moving_soon['eating'] = True
-        script.strings['health'].set(f"{timer}/{sleep_duration} Waiting to guzzle rock cake.")
-        time.sleep(1)
-
-    script.moving_soon['eating'] = False
-    while script.check_moving_soon():
-        time.sleep(.3)
+def eatRockCake(client, script, rock) -> None:  # Done
 
     with script.lock:
+
         script.post("Guzzling rock cake.")
 
-        moveToTab(client, 'Items')
+        # Move to tab
+        moveToTab(client, "Items")
+        time.sleep(getSleepTRNV(.3))
+
+        # Move to rock cake
+        moveMouse(rock[0])
         time.sleep(getSleepTRNV(.1))
-        rock = getInventoryLocations(client, script, '(*)')
-        if len(rock) != 0:
-            moveMouse(rock[0])
-            time.sleep(getSleepTRNV(.1))
-            pyautogui.rightClick()
-            time.sleep(getSleepTRNV(.2))
-            x, y = pyautogui.position()
-            moveMouse((getTRNV(x, x - 5, x + 5), getTRNV(y + 41, y + 36, y + 46),))
-            time.sleep(getSleepTRNV(.1))
-            pyautogui.click()
-            time.sleep(getSleepTRNV(.2))
-        else:
-            script.eating = False
-            sys.exit()
-    if not script.overloading:
-        moveOffScreen(client, script)
-    script.eating = False
+
+        # Right click to bring up guzzle menu
+        pyautogui.rightClick()
+        time.sleep(getSleepTRNV(.2))
+
+        # Move mouse down relative to current location to reach "Guzzle" menu option
+        x, y = pyautogui.position()
+        moveMouse((getTRNV(x, x - 5, x + 5), getTRNV(y + 41, y + 36, y + 46),))
+        time.sleep(getSleepTRNV(.2))
+
+        # Click to finish guzzling rock cake
+        pyautogui.click()
+        time.sleep(getSleepTRNV(.1))
 
 
-def logout(client, script):
-    time.sleep(getSleepTRNV(10))
+def logout(client, script) -> None:
+
+    # Simple wait to look a bit more human
+    time.sleep(getSleepTRNV(20))
+
+    script.post("Logging out.")
+
     with script.lock:
-        script.post("Logging out.")
+
+        # Move to logout tab
         moveToTab(client, 'Logout')
         time.sleep(getSleepTRNV(.2))
+
+        # Move mouse to logout button
         moveMouse(getTRNVCoord(client.rect_logout_button))
         time.sleep(getSleepTRNV(.1))
+
+        # Click logout button TODO: See if a double click is needed here
         pyautogui.click()
         time.sleep(getSleepTRNV(.1))
         pyautogui.click()
-        moveOffScreen(client, script)
+        time.sleep(getSleepTRNV(.1))
 
 
-def getInventoryLocations(client, script, item):
-    inventory = []
-    for row in range(7):
-        for column in range(4):
-            if item in script.inv_strings[row][column].get():
-                inventory.append(getTRNVCoord(client.inventory[row][column].rect))
+def moveOffScreen(client, script) -> None:
+    with script.lock:
 
-    return inventory
+        # Moves the mouse just off the right side of the Runelite client
+        moveMouse((client.rectangle.right + 10, client.rectangle.top + getSleepTRNV(300),))
+        time.sleep(getSleepTRNV(.3))
 
-
-def moveOffScreen(client, script):  # Must have movement lock in calling function to call
-    if not script.lock.locked():
-        with script.lock:
-            moveMouse((client.rectangle.right + 10, client.rectangle.top + getSleepTRNV(300),))
-            time.sleep(getSleepTRNV(.3))
-            pyautogui.click()
-            time.sleep(getSleepTRNV(.2))
+        # Click off screen to be sure Runelite loses window focus
+        pyautogui.click()
+        time.sleep(getSleepTRNV(.2))
 
 
-def moveToTab(client, tab):  # Only call with movement lock.
-    rect = client.rect_prayer_tab
-    f_key = 'f3'
-    if tab == 'Prayer':
-        rect = client.rect_prayer_tab
-        f_key = 'f3'
-    elif tab == 'Items':
+def moveToTab(client, tab) -> None:
+    # TODO: Actually implement random chance to change using f-key (Runelite needs focus)
+    # TODO: Use enums instead of strings. Try to include f-key and rect data.
+    f_key = ''
+
+    if tab == 'Items':
         rect = client.rect_inventory_tab
         f_key = 'f2'
     elif tab == 'Logout':
         rect = client.rect_logout_tab
-    if client.tab != tab:
-        if random.randint(0, 1) == 2:  # Turned off F keys, would need focus on runelite
+        # No F key for logging out
+    else:
+        rect = client.rect_prayer_tab
+        f_key = 'f3'
+
+    if client.tab != tab:  # If not already on the desired tab
+        if random.randint(0, 1) == 100:  # Currently never returns True. Runelite needs focus for f_key to do anything.
+            # Presses f key to change tabs
             pyautogui.press(f_key)
             time.sleep(getSleepTRNV(.27))
-        else:  # currently always false to this
+        else:  # Currently always falls to this
+            # Move to tab change region
             moveMouse(getTRNVCoord(rect))
-            time.sleep(getSleepTRNV(.01))
+            time.sleep(getSleepTRNV(.08))
+
+            # Clicks the tab to finish changing tabs
             pyautogui.click()
+            time.sleep(getSleepTRNV(.08))
 
 
 def login(client, script):  # Takes control of the mouse and keyboard to login to Runelite.
