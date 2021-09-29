@@ -8,7 +8,7 @@ from utils import getTRNVCoord
 class runelite:
     def __init__(self):
         print(f"Runelite virtual client instantiated.")
-
+        # TODO clean up classes
         self.client = Application().connect(path=r"C:\Users\Marshall\AppData\Local\RuneLite")['RuneLite']
         self.offset = (self.client.rectangle().left, self.client.rectangle().top,)
 
@@ -17,7 +17,7 @@ class runelite:
         self.tab = 'Unknown'
 
         self.buffed = True
-        self.absorbs = 999
+        self.absorbs = 0
         self.hp = 1
 
         self.inNMZ = True
@@ -40,13 +40,13 @@ class runelite:
         self.inventory = self.init_inventory()
 
     def get_items(self, item):
-        inventory = []
+        items = []
         for row in range(7):
             for column in range(4):
-                if item in inventory[row][column].contents:
-                    inventory.append(getTRNVCoord(self.inventory[row][column].rect))
+                if item in self.inventory[row][column].contents:
+                    items.append(getTRNVCoord(self.inventory[row][column].rect))
 
-        return inventory
+        return items
 
     def update_location(self) -> None:
         r = self.client.rectangle()

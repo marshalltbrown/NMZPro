@@ -2,7 +2,8 @@
 
 class admin:
     def __init__(self, style, strings, lock, inventory_strings, **kwargs):
-
+        # TODO: Add gui class to better control gui strings
+        # TODO clean up classes
         # Set initialization vars
         self.style = style  # Currently uses 'S' (Strength pot) or 'R' (range pot)
         self.strings = strings

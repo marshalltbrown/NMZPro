@@ -1,63 +1,71 @@
 import sys
 import threading
-
 import keyboard
 import pyautogui
 import win32ui
-
 from utils import *
 
 
-def testt(client, script):
-    invent = client.get_items('A')
-    if len(invent) > 3:
-        invent = invent[:3]
-    if len(invent) != 0:
-        for i in range(len(invent)):
-            moveMouse(invent[i])
-            time.sleep(.3)
-
-
 def NMZ(client, script):
+    # TODO improve workflow to appear more human
     mouse = Controller()
-    flick_time_threshold = time.time()
-    absorb_threshold = getTRNV(250, 180, 300)
+    flick_time_threshold = time.time() + getSleepTRNV(57)
+    absorb_threshold = round(getTRNV(250, 180, 300))
+    time.sleep(7)
+    script.strings['status'].set('Active')
+    script.post("Starting Script Now")
+    while script.active:
 
-    while True:
-        if not client.inNMZ:
-            timer = 0
-            while timer <= 10:
-                if client.inNMZ:
-                    continue
-                if timer == 10:
-                    script.active = False
-                    script.post("NMZ not found.")
-                    time.sleep(getSleepTRNV(3))
-                    logout(client, script)
-                    sys.exit()
-                time.sleep(1)
-                timer += 1
+        nmz_check(client, script)
+        moved_this_loop = False
 
         if client.hp > 1 and (rock := client.get_items('(*)')):
             eatRockCake(client, script, rock)
+            moved_this_loop = True
+            # TODO add something here to run a flick if there is still a chunk of time left on the clock
 
+        current_time = time.time()
+        script.strings['health'].set(f"{client.hp} hp | {round(flick_time_threshold-current_time)} secs until pray flick.")
         if time.time() >= flick_time_threshold:
             flickRapidHeal(client, script)
             flick_time_threshold = time.time() + getSleepTRNV(57)
+            moved_this_loop = True
 
+        script.strings['absorption'].set(f"{client.absorbs} | Drinking at {absorb_threshold}. ")
         if client.absorbs <= absorb_threshold and (pots := client.get_items('A')):
             drinkAbsorption(client, script, pots)
-            absorb_threshold = getTRNV(250, 180, 300)
+            absorb_threshold = round(getTRNV(250, 180, 300))
+            moved_this_loop = True
 
-        if not client.buffed and (pots := client.get_items(client.style)):
+        if not client.buffed and (pots := client.get_items(script.style)):
             drinkBuff(client, script, pots)
+            moved_this_loop = True
 
         x, y = mouse.position
         if client.rectangle.left < x < client.rectangle.right \
-                and client.rectangle.top < y < client.rectangle.bottom:
+                and client.rectangle.top < y < client.rectangle.bottom and moved_this_loop:
             moveOffScreen(client, script)
 
-        time.sleep(1)
+        time.sleep(.2)
+
+
+def nmz_check(client, script) -> None:
+    if not client.inNMZ:
+        timer = 1
+        while timer <= 25:
+            if client.inNMZ:
+                script.post('NMZ Found | Resuming script')
+                break
+            if timer == 25:
+                script.active = False
+                script.post("NMZ not found. Logging out.")
+                script.strings['status'].set('Ended')
+                time.sleep(getSleepTRNV(3))
+                logout(client, script)
+                break
+            script.post(f"{timer} / 25 Seconds until logout.")
+            time.sleep(1)
+            timer += 1
 
 
 def overload(client, script):
@@ -297,7 +305,7 @@ def moveToTab(client, tab) -> None:
             time.sleep(getSleepTRNV(.08))
 
 
-def login(client, script):  # Takes control of the mouse and keyboard to login to Runelite.
+def login(client, script) -> None:  # Takes control of the mouse and keyboard to login to Runelite.
     script.post('Beginning login script.')
     readPassword()
     client.setFocus()
@@ -321,7 +329,7 @@ def login(client, script):  # Takes control of the mouse and keyboard to login t
     script.post('Ready to log in.')
 
 
-def autoAlch(client, string_var, lock):
+def autoAlch(client, string_var, lock) -> None:
     client.setFocus()
     time.sleep(.5)
     pyautogui.press('f4')

@@ -1,19 +1,10 @@
 import tkinter.scrolledtext as st
 from tkinter import *
 from tkinter.ttk import Separator
-
 from Actions import *
 from Runelite import runelite
 from Controllers import admin
 from reader import reader, overload_tracker
-
-
-def test():
-
-    boss = admin('R', string_vars, lock, inventory_table)
-    threading.Thread(target=reader, args=(client, boss,), daemon=True).start()
-    time.sleep(1)
-    # threading.Thread(target=testt, args=(client, boss,), daemon=True).start()
 
 
 def savePass():
@@ -70,7 +61,6 @@ def runNMZ():
 
     string_vars['box'].insert('end', f"Starting NMZ script.\nStyle: {style}\n")
     boss = admin(s_style, string_vars, lock, inventory_table)
-    time.sleep(3)
     threading.Thread(target=reader, args=(client, boss,), daemon=True).start()
     if s_style == 'O':
         threading.Thread(target=overload_tracker, args=(client, boss,), daemon=True).start()
@@ -122,7 +112,7 @@ button_frame = Frame(gui, height=100)
 button_frame.grid(row=3, column=0, columnspan=2, sticky='nw', pady=(10, 0))
 # Left side of button panel
 login_button = Button(button_frame, text='Login', width=7, command=lambda: runLogin()).grid(row=0, column=0, padx=10, pady=(10, 0))
-alch_button = Button(button_frame, text='Alch', width=7, command=lambda: test()).grid(row=1, column=0, padx=10, pady=13)
+alch_button = Button(button_frame, text='Alch', width=7, command=lambda: runAlch()).grid(row=1, column=0, padx=10, pady=13)
 nmz_button = Button(button_frame, text='NMZ', width=7, command=lambda: runNMZ()).grid(row=2, column=0, padx=10)
 # Right side of button panel
 pass_entry = Entry(button_frame, width=20)

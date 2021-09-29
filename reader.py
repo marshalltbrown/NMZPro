@@ -47,24 +47,25 @@ def read_overload(im):
 def reader(client, script):
 
     mouse = Controller()
-    window = win32ui.FindWindow(None, "RuneLite")
     ocr = Reader(['en'], gpu=True)
-    
-    # Params are ( left, top, width, height )
-    left_pot_region = (27 + client.rectangle.left, 95 + client.rectangle.top, 29, 12,)
-    right_pot_region = (90 + client.rectangle.left, 95 + client.rectangle.top, 29, 12,)
+
     print("Reader and dependencies initialized.")
 
     while script.active:
         try:
-            # Get window DC used for getting color from pixels
-            dc = window.GetWindowDC()
-            
+            # Params are ( left, top, width, height )
+            left_pot_region = (27 + client.rectangle.left, 95 + client.rectangle.top, 29, 12,)
+            right_pot_region = (90 + client.rectangle.left, 95 + client.rectangle.top, 29, 12,)
             # Check if the window has moved. If so, update client rectangles
             client.update_location()
 
+            # Set Runelite screenshot rect
+            rect = client.rectangle
+            runelite_region = (rect.left, rect.top, (rect.right - rect.left), (rect.bottom - rect.top))
+            img = pyautogui.screenshot(region=runelite_region)
+
             # Reads between 3 useful tabs to see which is active
-            readTab(client, script, dc)
+            readTab(client, script, img)
 
             # If in overload mode, absorptions are on the box to the left
             if script.style == 'O':
@@ -74,7 +75,7 @@ def reader(client, script):
                     read_nmz_pot(client, script, ocr, left_pot_region)
 
             else:  # If in regular mode, absorptions are on the left
-                readBuffPot(client, script, dc)
+                readBuffPot(client, script, img)
                 read_nmz_pot(client, script, ocr, left_pot_region)
 
             # OCR health
@@ -83,19 +84,12 @@ def reader(client, script):
             # If mouse is not in the inventory grid then read the inventory
             x, y = mouse.position
             rect = client.rectangle
-            if not (rect.left+735 > x > rect.left+561) or not (rect.bottom > y > rect.top+207):
-                readInventory(client, script.inv_strings, dc)
-
-            # Delete the DC to refresh for next run and prevent memory leaks
-            dc.DeleteDC()
+            if not (rect.left+750 > x > rect.left+560) or not (rect.bottom > y > rect.top+207):
+                readInventory(client, script.inv_strings, img)
 
         except Exception as e:
             print(e)
         time.sleep(.3)
-
-
-def readOverloadState(client, script, dc):  # TODO set timer and track 5 minutes from overload click
-    pass
 
 
 def readInventory(client, inv_strings, dc):
@@ -105,10 +99,10 @@ def readInventory(client, inv_strings, dc):
             x = coord_inv_slot1_1[0]
             for column in range(4):
                 color_array = [
-                    dc.GetPixel(x, one_dose),
-                    dc.GetPixel(x, one_dose - 7),
-                    dc.GetPixel(x, one_dose - 10),
-                    dc.GetPixel(x, one_dose - 12)
+                    dc.getpixel((x, one_dose,)),
+                    dc.getpixel((x, one_dose - 7,)),
+                    dc.getpixel((x, one_dose - 10,)),
+                    dc.getpixel((x, one_dose - 12,))
                 ]
                 if itemCheck(color_array, color_dwarven_rock, 10) == 4:
                     update_pot_in_inv(client, inv_strings, row, column, '(*)')
@@ -139,8 +133,8 @@ def update_pot_in_inv(client, inv_strings, row, column, contents, dose=0):
 
 
 def readTab(client, script, dc):
-    item_tab_color = dc.GetPixel(*coord_item_tab_check)
-    prayer_tab_color = dc.GetPixel(*coord_prayer_tab_check)
+    item_tab_color = dc.getpixel(coord_item_tab_check)
+    prayer_tab_color = dc.getpixel(coord_prayer_tab_check)
 
     if pixelMatchesColor(item_tab_color, color_tab_selected, tolerance=10):
         client.tab = 'Items'
@@ -155,51 +149,53 @@ def readTab(client, script, dc):
 
 
 def readBuffPot(client, script, dc):
-    if not script.drinking_buff:
-        # Checks if buff is in double digits still
-        current_pixel = 123
-        previous_color = 0
-        green_lines = 0
-        while current_pixel <= 141:
-            current_color = dc.GetPixel(current_pixel, 346)
-            if pixelMatchesColor(current_color, color_green, tolerance=5) and decimalColortoRGB(
-                    previous_color) != color_green:
-                green_lines += 1
-            previous_color = current_color
-            current_pixel += 1
+    # Checks if buff is in double digits still
+    current_pixel = 123
+    previous_color = 0
+    green_lines = 0
+    while current_pixel <= 141:
+        current_color = dc.getpixel((current_pixel, 346,))
+        if pixelMatchesColor(current_color, color_green, tolerance=5) \
+                and not pixelMatchesColor(previous_color, color_green, tolerance=5):
+            green_lines += 1
+        previous_color = current_color
+        current_pixel += 1
 
-        if green_lines == 2:
-            script.strings['buff'].set('>=10 remaining')
-            client.buffed = True
-        elif green_lines == 1:
-            script.strings['buff'].set('<=9 remaining')
-            client.buffed = False
-        else:
-            script.strings['buff'].set('???')
-            client.buffed = False
+    if green_lines == 2:
+        script.strings['buff'].set('>=10 remaining')
+        client.buffed = True
+    elif green_lines == 1:
+        script.strings['buff'].set('<=9 remaining')
+        client.buffed = False
+    else:
+        script.strings['buff'].set('???')
+        client.buffed = False
 
 
 def process_image(img, resize=False):
+    # Default flag to enlarge the image
     if resize:
-        base_width = 75
+        base_width = 75  # Increases the image based off this number
         w_percent = (base_width / float(img.size[0]))
         h_size = int((float(img.size[1]) * float(w_percent)))
         img = img.resize((base_width, h_size), Image.ANTIALIAS)
+    # Returns np.array used for OCR
     img = np.array(img)
     return img
 
 
 def read_nmz_pot(client, script, ocr, pot_region):
+
+    # Get screenshot from region
     img = pyautogui.screenshot(region=pot_region)
+    # Prep image for OCR
     img = process_image(img, resize=True)
+    # OCR the image
     word = ocr.readtext(img, allowlist='0123456789', detail=0)
 
     if word:
         client.inNMZ = True
-        word = word[0]
-        if not script.drinking_absorbs:
-            script.strings['absorption'].set(f"{word} Remaining")
-        client.absorbs = int(word)
+        client.absorbs = int(word[0])
     else:
         client.inNMZ = False
 
@@ -214,9 +210,11 @@ def readHealth(client, script, ocr):
     low_thresh = (60, 160, 160)
     high_thresh = (255, 260, 260)
 
+    # Get screenshot from region
     img = pyautogui.screenshot(region=hp_region)
     img = process_image(img, resize=True)
 
+    # Prep image for OCR
     hsv_img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     mask = cv2.inRange(hsv_img, low_thresh, high_thresh)
     blur = cv2.GaussianBlur(mask, (7, 7), 0)
@@ -224,5 +222,5 @@ def readHealth(client, script, ocr):
 
     if ocr_hp:
         ocr_hp = ocr_hp[0]
-        script.strings['health'].set(f"{ocr_hp} hp")
+        # script.strings['health'].set(f"{ocr_hp} hp")
         client.hp = int(ocr_hp)
