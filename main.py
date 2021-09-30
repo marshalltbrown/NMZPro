@@ -4,7 +4,7 @@ from tkinter.ttk import Separator
 from Actions import *
 from Runelite import runelite
 from Controllers import admin
-from reader import reader, overload_tracker
+from reader import reader
 
 
 def savePass():
@@ -62,11 +62,7 @@ def runNMZ():
     string_vars['box'].insert('end', f"Starting NMZ script.\nStyle: {style}\n")
     boss = admin(s_style, string_vars, lock, inventory_table)
     threading.Thread(target=reader, args=(client, boss,), daemon=True).start()
-    if s_style == 'O':
-        threading.Thread(target=overload_tracker, args=(client, boss,), daemon=True).start()
-        threading.Thread(target=overload, args=(client, boss,), daemon=True).start()
-    else:
-        threading.Thread(target=NMZ, args=(client, boss,), daemon=True).start()
+    threading.Thread(target=NMZ, args=(client, boss,), daemon=True).start()
 
 # --GUI and main thread set-up.
 gui = Tk()
@@ -149,9 +145,9 @@ string_vars['box'].grid(row=4, column=0, columnspan=4, padx=(10, 0), pady=(20, 0
 string_vars['box'].insert('end', "Program initiated.\n")
 string_vars['box'].configure(state='normal')
 
-try:
-    client = runelite()  # Object from Runelite.py class. Used for client data.
-except Exception as e:
-    string_vars['box'].insert('end', "Runelite not found. Make sure Runelite is on screen before continuing.\n")
+#try:
+client = runelite()  # Object from Runelite.py class. Used for client data.
+#except Exception as e:
+    #string_vars['box'].insert('end', "Runelite not found. Make sure Runelite is on screen before continuing.\n")
 
 gui.mainloop()  # Accessible code above this point.

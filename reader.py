@@ -8,40 +8,7 @@ import time
 from utils import *
 import pyautogui
 from easyocr import Reader
-
-
-def overload_tracker(client, script):
-    timer = time.time()
-    location = (client.rectangle.left, client.rectangle.top, client.rectangle.right, client.rectangle.bottom)
-    script.overloaded = read_overload(pyautogui.screenshot(region=location))
-    while script.active:
-        try:
-            # Get window DC used for getting color from pixels
-            if read_overload(pyautogui.screenshot(region=location)) and not script.overloaded:
-                script.overloaded = True
-                timer = time.time()
-                while read_overload(pyautogui.screenshot(region=location)):
-                    script.overload_time_left = round(300 - (time.time() - timer))
-                    script.strings['buff'].set(f"{script.overload_time_left} seconds of O left")
-                    time.sleep(.5)
-                script.overloaded = False
-                script.overload_time_left = 300
-                script.strings['buff'].set("Waiting for overload.")
-        except Exception as e:
-            print(e)
-
-
-def read_overload(im):
-    top_pot = im.getpixel((40, 69,))
-    mid_pot = im.getpixel((40, 83,))
-    bottom_pot = im.getpixel((40, 92,))
-    top = pixelMatchesColor(top_pot, (162, 145, 62,), tolerance=5)
-    mid = pixelMatchesColor(mid_pot, (9, 7, 7,), tolerance=5)
-    bottom = pixelMatchesColor(bottom_pot, (9, 7, 7,), tolerance=5)
-    if top and mid and bottom:
-        return True
-    else:
-        return False
+from Runelite import tabs, rects, coordinates
 
 
 def reader(client, script):
@@ -65,7 +32,7 @@ def reader(client, script):
             img = pyautogui.screenshot(region=runelite_region)
 
             # Reads between 3 useful tabs to see which is active
-            readTab(client, script, img)
+            readTab(script, img)
 
             # If in overload mode, absorptions are on the box to the left
             if script.style == 'O':
@@ -93,7 +60,7 @@ def reader(client, script):
 
 
 def readInventory(client, inv_strings, dc):
-    if client.tab == 'Items':
+    if tabs.inventory.selected:
         one_dose = coord_inv_slot1_1[1]
         for row in range(7):
             x = coord_inv_slot1_1[0]
@@ -132,19 +99,27 @@ def update_pot_in_inv(client, inv_strings, row, column, contents, dose=0):
     client.inventory[row][column].contents = contents
 
 
-def readTab(client, script, dc):
+def readTab(script, dc):
     item_tab_color = dc.getpixel(coord_item_tab_check)
     prayer_tab_color = dc.getpixel(coord_prayer_tab_check)
 
     if pixelMatchesColor(item_tab_color, color_tab_selected, tolerance=10):
-        client.tab = 'Items'
+        for tab in tabs:
+            if tab == tabs.inventory:
+                tab.selected = True
+            else:
+                tab.selected = False
         script.strings['inventory'].set('On items tab.')
-
     elif pixelMatchesColor(prayer_tab_color, color_tab_selected, tolerance=10):
-        client.tab = 'Prayer'
+        for tab in tabs:
+            if tab == tabs.prayer:
+                tab.selected = True
+            else:
+                tab.selected = False
         script.strings['inventory'].set('On prayer tab.')
     else:
-        client.tab = 'Unknown'
+        for tab in tabs:
+            tab.selected = False
         script.strings['inventory'].set('On unknown tab.')
 
 
@@ -220,7 +195,7 @@ def readHealth(client, script, ocr):
     mask = cv2.inRange(hsv_img, low_thresh, high_thresh)
     blur = cv2.GaussianBlur(mask, (7, 7), 0)
     ocr_hp = ocr.readtext(blur, allowlist='0123456789', detail=0)
-    # TODO: if the value is too far off it shouldnt register
+    # TODO: if the value is too far off it shouldn't register
     if ocr_hp:
         ocr_hp = ocr_hp[0]
         # script.strings['health'].set(f"{ocr_hp} hp")

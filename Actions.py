@@ -4,12 +4,14 @@ import keyboard
 import pyautogui
 import win32ui
 from utils import *
+from Runelite import tabs, rects, coordinates
 
 
 def NMZ(client, script):
     # TODO improve workflow to appear more human
     mouse = Controller()
-    flick_time_threshold = time.time() + getSleepTRNV(57)
+    sleep_thresh_seed = (55, 35, 70)
+    flick_time_threshold = time.time() + getTRNV(*sleep_thresh_seed)
     absorb_threshold = round(getTRNV(250, 180, 300))
     time.sleep(7)
     script.strings['status'].set('Active')
@@ -20,25 +22,25 @@ def NMZ(client, script):
         moved_this_loop = False
         # TODO if other scripts are run, may as well flick? human like?
         if client.hp > 1 and (rock := client.get_items('(*)')):
-            eatRockCake(client, script, rock)
+            eatRockCake(script, rock)
             moved_this_loop = True
             # TODO add something here to run a flick if there is still a chunk of time left on the clock
 
         current_time = time.time()
         script.strings['health'].set(f"{client.hp} hp | {round(flick_time_threshold-current_time)} secs until pray flick.")
         if time.time() >= flick_time_threshold:
-            flickRapidHeal(client, script)
-            flick_time_threshold = time.time() + getSleepTRNV(57)
+            flickRapidHeal(script)
+            flick_time_threshold = time.time() + getTRNV(*sleep_thresh_seed)
             moved_this_loop = True
 
         script.strings['absorption'].set(f"{client.absorbs} | Drinking at {absorb_threshold}. ")
         if client.absorbs <= absorb_threshold and (pots := client.get_items('A')):
-            drinkAbsorption(client, script, pots)
+            drinkAbsorption(script, pots)
             absorb_threshold = round(getTRNV(250, 180, 300))
             moved_this_loop = True
 
         if not client.buffed and (pots := client.get_items(script.style)):
-            drinkBuff(client, script, pots)
+            drinkBuff(script, pots)
             moved_this_loop = True
 
         x, y = mouse.position
@@ -61,87 +63,21 @@ def nmz_check(client, script) -> None:
                 script.post("NMZ not found. Logging out.")
                 script.strings['status'].set('Ended')
                 time.sleep(getSleepTRNV(3))
-                logout(client, script)
+                logout(script)
                 break
             script.post(f"{timer} / 25 Seconds until logout.")
             time.sleep(1)
             timer += 1
 
 
-def overload(client, script):
-    while True:
-        if not client.inNMZ:
-            timer = 0
-            while timer <= 10:
-                if client.inNMZ:
-                    continue
-                if timer == 10:
-                    script.active = False
-                    script.post("NMZ not found.")
-                    time.sleep(getSleepTRNV(3))
-                    logout(client, script)
-                    sys.exit()
-                time.sleep(1)
-                timer += 1
-
-        if script.overload_time_left <= 45 and client.check_pot('O'):
-            script.overloading = True
-            threading.Thread(target=flickRapidHeal, args=(client, script), kwargs={'sleep_time': .1}, daemon=True).start()
-            if not script.eating and client.hp > 1:
-                threading.Thread(target=eatRockCake, args=(client, script), kwargs={'sleep_time': .1}, daemon=True).start()
-            if not script.drinking_absorbs and client.check_pot('A') and client.absorbs <= 250:
-                threading.Thread(target=drinkAbsorption, args=(client, script), kwargs={'sleep_time': .1}, daemon=True).start()
-            in_place = False
-            while time_left := script.overload_time_left <= 45:
-                with script.lock:
-                    if 15 <= time_left <= 25 and not in_place:
-                        moveToTab(client, "Prayer")
-                        time.sleep(getSleepTRNV(.2))
-                        moveMouse(getTRNVCoord(client.rect_melee_prayer))
-                    if time_left <= 1:
-                        pyautogui.click()
-                        moveToTab(client, "Items")
-                        overload_pots = client.get_items('O')
-                        if len(overload_pots) != 0:
-                            moveMouse(overload_pots[0])
-                            time.sleep(getSleepTRNV(.15))
-                            pyautogui.click()
-
-                            while not script.overloaded:
-                                time.sleep(getSleepTRNV(.05))
-                                pyautogui.click()
-                            time.sleep(getSleepTRNV(.3))
-                            moveToTab(client, "Prayer")
-                            time.sleep(getSleepTRNV(.2))
-                            moveMouse(getTRNVCoord(client.rect_melee_prayer))
-                            pyautogui.click()
-                            moveOffScreen(client, script)
-                        else:
-                            script.overloading = False
-                            continue
-
-        if not script.flicking and not script.overloading:
-            threading.Thread(target=flickRapidHeal, args=(client, script), daemon=True).start()
-
-        if not script.drinking_absorbs and client.check_pot('A') and client.absorbs <= 250\
-                and not script.overloading:
-            threading.Thread(target=drinkAbsorption, args=(client, script), daemon=True).start()
-
-        if not script.drinking_buff and client.check_pot('O') and not client.buffed and not script.overloading:
-            threading.Thread(target=drinkBuff, args=(client, script), daemon=True).start()
-
-        if not script.eating and client.hp > 1 and not script.overloading:
-            threading.Thread(target=eatRockCake, args=(client, script), daemon=True).start()
-
-
-def drinkBuff(client, script, buffs) -> None:  # Done
+def drinkBuff(script, buffs) -> None:  # Done
 
     with script.lock:
 
         script.post("Drinking buff pot.")
 
         # Move to tab
-        moveToTab(client, "Items")
+        moveToTab(tabs.inventory)
         time.sleep(getSleepTRNV(1))
 
         # Move to 1st buff pot
@@ -155,14 +91,14 @@ def drinkBuff(client, script, buffs) -> None:  # Done
         script.post("Buff pot drank.")
 
 
-def drinkAbsorption(client, script, pots) -> None:  # Done
+def drinkAbsorption(script, pots) -> None:  # Done
 
     with script.lock:
 
         script.post("Drinking absorption pot.")
 
         # Move to tab
-        moveToTab(client, "Items")
+        moveToTab(tabs.inventory)
         time.sleep(getSleepTRNV(.3))
 
         # Limits pots to click to 3
@@ -182,7 +118,7 @@ def drinkAbsorption(client, script, pots) -> None:  # Done
         time.sleep(getSleepTRNV(.1))
 
 
-def flickRapidHeal(client, script) -> None:  # Done
+def flickRapidHeal(script) -> None:  # Done
 
     with script.lock:
 
@@ -190,18 +126,18 @@ def flickRapidHeal(client, script) -> None:  # Done
         if random.randrange(1, 10) == 1:
             script.post("Moving to prayer tab to flick. (1/10 odds)")
             # Set rapid heal rect
-            coords = getTRNVCoord(client.rect_rapid_heal)
+            rect_coords = getTRNVCoord(rects.rapid_heal.rect)
             # Go to prayer tab if necessary
-            moveToTab(client, 'Prayer')
+            moveToTab(tabs.prayer)
             time.sleep(getSleepTRNV(.15))
         else:
             # Set quick pray rect.
-            coords = getTRNVCoord(client.rect_quick_pray)
+            rect_coords = getTRNVCoord(rects.quick_pray.rects)
 
         script.post("Flicking rapid heal now.")
 
         # Move to prayer location. ( Either quick pray or actual rapid heal )
-        moveMouse(coords)
+        moveMouse(rect_coords)
         time.sleep(getSleepTRNV(.15))
 
         # Flick ( Double click) prayer location. ( Either quick pray or actual rapid heal )
@@ -211,14 +147,14 @@ def flickRapidHeal(client, script) -> None:  # Done
         time.sleep(getSleepTRNV(.15))
 
 
-def eatRockCake(client, script, rock) -> None:  # Done
+def eatRockCake(script, rock) -> None:  # Done
 
     with script.lock:
 
         script.post("Guzzling rock cake.")
 
         # Move to tab
-        moveToTab(client, "Items")
+        moveToTab(tabs.inventory)
         time.sleep(getSleepTRNV(.3))
 
         # Move to rock cake
@@ -239,7 +175,7 @@ def eatRockCake(client, script, rock) -> None:  # Done
         time.sleep(getSleepTRNV(.1))
 
 
-def logout(client, script) -> None:
+def logout(script) -> None:
 
     # Simple wait to look a bit more human
     time.sleep(getSleepTRNV(20))
@@ -249,11 +185,11 @@ def logout(client, script) -> None:
     with script.lock:
 
         # Move to logout tab
-        moveToTab(client, 'Logout')
+        moveToTab(tabs.logout)
         time.sleep(getSleepTRNV(.2))
 
         # Move mouse to logout button
-        moveMouse(getTRNVCoord(client.rect_logout_button))
+        moveMouse(getTRNVCoord(rects.logout.rect))
         time.sleep(getSleepTRNV(.1))
 
         # Click logout button TODO: See if a double click is needed here
@@ -275,22 +211,12 @@ def moveOffScreen(client, script) -> None:
         time.sleep(getSleepTRNV(.2))
 
 
-def moveToTab(client, tab) -> None:
+def moveToTab(_tab: tabs) -> None:
     # TODO: Actually implement random chance to change using f-key (Runelite needs focus)
     # TODO: Use enums instead of strings. Try to include f-key and rect data.
     f_key = ''
-
-    if tab == 'Items':
-        rect = client.rect_inventory_tab
-        f_key = 'f2'
-    elif tab == 'Logout':
-        rect = client.rect_logout_tab
-        # No F key for logging out
-    else:
-        rect = client.rect_prayer_tab
-        f_key = 'f3'
-
-    if client.tab != tab:  # If not already on the desired tab
+    if not _tab.selected:  # If not already on the desired tab
+        rect = _tab.rect
         if random.randint(0, 1) == 100:  # Currently never returns True. Runelite needs focus for f_key to do anything.
             # Presses f key to change tabs
             pyautogui.press(f_key)
@@ -314,11 +240,11 @@ def login(client, script) -> None:  # Takes control of the mouse and keyboard to
     current_color = dc.GetPixel(*coord_login_box_check)
     if pixelMatchesColor(current_color, color_user_box_is_present, tolerance=10):
         script.post("Clicking \"Existing user\" box.")
-        moveMouse(client.coord_existing_user)
+        moveMouse(coordinates.existing_user_login_box.tuple)
         time.sleep(getSleepTRNV(.4))
         pyautogui.click()
         time.sleep(getSleepTRNV(1))
-    moveMouse(client.coord_login_entry)
+    moveMouse(coordinates.pass_input_area.tuple)
     time.sleep(getSleepTRNV(.2))
     pyautogui.click()
     time.sleep(getSleepTRNV(.2))

@@ -4,20 +4,20 @@ from math import floor
 
 import pyperclip
 from pynput.mouse import Controller
-
+from object_templates import rectangle
 from vars import *
 from windmouse import WindMouse
 
 
-def getTRNV(mean, lower, upper):
+def getTRNV(mean: int or float, lower: int or float, upper: int or float):
     result = False
-    #print(f"Mean: {mean}, Upper = {upper}, lower ={lower}")
+    # print(f"Mean: {mean}, Upper = {upper}, lower ={lower}")
     while result < lower or result > upper:
         result = random.normalvariate(mean, (upper-lower) / 4)
     return result
 
 
-def getSleepTRNV(mean):
+def getSleepTRNV(mean: float or int):
     result = False
     upper = mean * 1.4
     lower = mean * .6
@@ -26,7 +26,7 @@ def getSleepTRNV(mean):
     return result
 
 
-def getTRNVCoord(rect):
+def getTRNVCoord(rect: rectangle):
 
     mean_x = (rect.right + rect.left) / 2
     mean_y = (rect.top + rect.bottom) / 2
@@ -37,7 +37,7 @@ def getTRNVCoord(rect):
     return x, y
 
 
-def moveMouse(end_coords):
+def moveMouse(end_coords: tuple):
     myMouse = WindMouse(settings)
     mouse = Controller()
     endX, endY = end_coords
@@ -69,7 +69,7 @@ def moveMouse(end_coords):
                 time.sleep(getSleepTRNV(.041))
 
 
-def itemCheck(colors, sample, tolerance):
+def itemCheck(colors: tuple, sample, tolerance: int):
     counter = 0
     if pixelMatchesColor(colors[0], sample, tolerance=tolerance):
         counter += 1
@@ -82,7 +82,7 @@ def itemCheck(colors, sample, tolerance):
     return counter
 
 
-def decimalColortoRGB(decimal):
+def decimalColortoRGB(decimal: int):
     r = decimal % 256
     g = floor(decimal / 256) % 256
     b = floor(decimal / (256 * 256))
