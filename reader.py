@@ -12,55 +12,54 @@ from Runelite import tabs, rects, coordinates
 
 
 def reader(client, script):
-
     mouse = Controller()
     ocr = Reader(['en'], gpu=True)
 
     print("Reader and dependencies initialized.")
 
     while script.active:
-        try:
+        #try:
             # Params are ( left, top, width, height )
-            left_pot_region = (27 + client.rectangle.left, 95 + client.rectangle.top, 29, 12,)
-            right_pot_region = (90 + client.rectangle.left, 95 + client.rectangle.top, 29, 12,)
-            # Check if the window has moved. If so, update client rectangles
-            client.update_location()
+        left_pot_region = (27 + client.rectangle.left, 95 + client.rectangle.top, 29, 12,)
+        right_pot_region = (90 + client.rectangle.left, 95 + client.rectangle.top, 29, 12,)
+        # Check if the window has moved. If so, update client rectangles
+        client.update_location()
 
-            # Set Runelite screenshot rect
-            rect = client.rectangle
-            runelite_region = (rect.left, rect.top, (rect.right - rect.left), (rect.bottom - rect.top))
-            img = pyautogui.screenshot(region=runelite_region)
+        # Set Runelite screenshot rect
+        rect = client.rectangle
+        runelite_region = (rect.left, rect.top, (rect.right - rect.left), (rect.bottom - rect.top))
+        img = pyautogui.screenshot(region=runelite_region)
 
-            # Reads between 3 useful tabs to see which is active
-            readTab(script, img)
+        # Reads between 3 useful tabs to see which is active
+        readTab(client, script, img)
 
-            # If in overload mode, absorptions are on the box to the left
-            if script.style == 'O':
-                if script.overloaded:
-                    read_nmz_pot(client, script, ocr, right_pot_region)
-                else:
-                    read_nmz_pot(client, script, ocr, left_pot_region)
-
-            else:  # If in regular mode, absorptions are on the left
-                readBuffPot(client, script, img)
+        # If in overload mode, absorptions are on the box to the left
+        if script.style == 'O':
+            if script.overloaded:
+                read_nmz_pot(client, script, ocr, right_pot_region)
+            else:
                 read_nmz_pot(client, script, ocr, left_pot_region)
 
-            # OCR health
-            readHealth(client, script, ocr)
+        else:  # If in regular mode, absorptions are on the left
+            readBuffPot(client, script, img)
+            read_nmz_pot(client, script, ocr, left_pot_region)
 
-            # If mouse is not in the inventory grid then read the inventory
-            x, y = mouse.position
-            rect = client.rectangle
-            if not (rect.left+750 > x > rect.left+560) or not (rect.bottom > y > rect.top+207):
-                readInventory(client, script.inv_strings, img)
+        # OCR health
+        readHealth(client, script, ocr)
 
-        except Exception as e:
-            print(e)
+        # If mouse is not in the inventory grid then read the inventory
+        x, y = mouse.position
+        rect = client.rectangle
+        if not (rect.left+750 > x > rect.left+560) or not (rect.bottom > y > rect.top+207):
+            readInventory(client, script.inv_strings, img)
+
+        #except Exception as e:
+            #print(e)
         time.sleep(.3)
 
 
 def readInventory(client, inv_strings, dc):
-    if tabs.inventory.selected:
+    if client.current_tab == tabs.inventory:
         one_dose = coord_inv_slot1_1[1]
         for row in range(7):
             x = coord_inv_slot1_1[0]
@@ -99,27 +98,18 @@ def update_pot_in_inv(client, inv_strings, row, column, contents, dose=0):
     client.inventory[row][column].contents = contents
 
 
-def readTab(script, dc):
-    item_tab_color = dc.getpixel(coord_item_tab_check)
-    prayer_tab_color = dc.getpixel(coord_prayer_tab_check)
+def readTab(client, script, img):
+    item_tab_color = img.getpixel(coord_item_tab_check)
+    prayer_tab_color = img.getpixel(coord_prayer_tab_check)
 
     if pixelMatchesColor(item_tab_color, color_tab_selected, tolerance=10):
-        for tab in tabs:
-            if tab == tabs.inventory:
-                tab.selected = True
-            else:
-                tab.selected = False
+        client.current_tab = tabs.inventory
         script.strings['inventory'].set('On items tab.')
     elif pixelMatchesColor(prayer_tab_color, color_tab_selected, tolerance=10):
-        for tab in tabs:
-            if tab == tabs.prayer:
-                tab.selected = True
-            else:
-                tab.selected = False
+        client.current_tab = tabs.prayer
         script.strings['inventory'].set('On prayer tab.')
     else:
-        for tab in tabs:
-            tab.selected = False
+        client.current_tab = None
         script.strings['inventory'].set('On unknown tab.')
 
 
@@ -160,7 +150,6 @@ def process_image(img, resize=False):
 
 
 def read_nmz_pot(client, script, ocr, pot_region):
-
     # Get screenshot from region
     img = pyautogui.screenshot(region=pot_region)
     # Prep image for OCR
@@ -168,6 +157,7 @@ def read_nmz_pot(client, script, ocr, pot_region):
     # OCR the image
     word = ocr.readtext(img, allowlist='0123456789', detail=0)
 
+    # TODO: if the value is too far off it shouldn't register
     if word:
         client.inNMZ = True
         if len(word[0]) == 3:  # TODO: A better way to weed out wrong results?
@@ -195,7 +185,7 @@ def readHealth(client, script, ocr):
     mask = cv2.inRange(hsv_img, low_thresh, high_thresh)
     blur = cv2.GaussianBlur(mask, (7, 7), 0)
     ocr_hp = ocr.readtext(blur, allowlist='0123456789', detail=0)
-    # TODO: if the value is too far off it shouldn't register
+
     if ocr_hp:
         ocr_hp = ocr_hp[0]
         # script.strings['health'].set(f"{ocr_hp} hp")

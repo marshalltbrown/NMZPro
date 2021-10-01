@@ -10,30 +10,22 @@ class runelite:
         # TODO clean up classes
         self.client = Application().connect(path=r"C:\Users\Marshall\AppData\Local\RuneLite")['RuneLite']
 
-
         # Usable vars
         self.rectangle = self.client.rectangle()
         self.offset = (self.rectangle.left, self.rectangle.top,)
+        self.current_tab = None
+
+        rectangle.offset = self.offset
+        coord.offset = self.offset
 
         self.buffed = True
+
         self.absorbs = 0
         self.hp = 1
         self.inNMZ = True
 
         # Initializations & offsets
         self.inventory = self.init_inventory()
-        # Updates offset for each inventory space
-        for row in range(7):
-            for column in range(4):
-                self.inventory[row][column].set_offset(self.offset)
-
-        # Update all enums found below
-        for _coord in coordinates.__dict__.values():
-            _coord.set_offset(self.offset)
-        for _tab in tabs.__dict__.values():
-            _tab.set_offset(self.offset)
-        for _rect in rects.__dict__.values():
-            _rect.set_rect(self.offset)
 
     def init_inventory(self):
         # 30 px wide then a 12px usable gap between boxes 42 total
@@ -53,6 +45,7 @@ class runelite:
 
     def update_location(self) -> None:
         r = self.client.rectangle()
+        self.rectangle = r
         top_left = (r.left, r.top,)
         if top_left != self.offset:
             bottom_right = (r.right, r.bottom,)
@@ -61,18 +54,8 @@ class runelite:
             # Updates client.offset
             self.offset = top_left
 
-            # Updates offset for each inventory space
-            for row in range(7):
-                for column in range(4):
-                    self.inventory[row][column].set_offset(top_left)
-
-            # Update all enums found below
-            for _tab in tabs.__dict__.values():
-                _tab.set_offset(self.offset)
-            for _coord in coordinates.__dict__.values():
-                _coord.set_offset(self.offset)
-            for _rect in rects.__dict__.values():
-                _rect.set_rect(self.offset)
+            rectangle.offset = top_left
+            coord.offset = top_left
 
             print('Updated client')
 

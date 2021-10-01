@@ -69,7 +69,7 @@ def moveMouse(end_coords: tuple):
                 time.sleep(getSleepTRNV(.041))
 
 
-def itemCheck(colors: tuple, sample, tolerance: int):
+def itemCheck(colors: list, sample, tolerance: int):
     counter = 0
     if pixelMatchesColor(colors[0], sample, tolerance=tolerance):
         counter += 1

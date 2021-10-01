@@ -5,6 +5,7 @@ import pyautogui
 import win32ui
 from utils import *
 from Runelite import tabs, rects, coordinates
+from object_templates import tab, rectangle, coord
 
 
 def NMZ(client, script):
@@ -29,18 +30,18 @@ def NMZ(client, script):
         current_time = time.time()
         script.strings['health'].set(f"{client.hp} hp | {round(flick_time_threshold-current_time)} secs until pray flick.")
         if time.time() >= flick_time_threshold:
-            flickRapidHeal(script)
+            flickRapidHeal(client, script)
             flick_time_threshold = time.time() + getTRNV(*sleep_thresh_seed)
             moved_this_loop = True
 
         script.strings['absorption'].set(f"{client.absorbs} | Drinking at {absorb_threshold}. ")
         if client.absorbs <= absorb_threshold and (pots := client.get_items('A')):
-            drinkAbsorption(script, pots)
+            drinkAbsorption(client, script, pots)
             absorb_threshold = round(getTRNV(250, 180, 300))
             moved_this_loop = True
 
         if not client.buffed and (pots := client.get_items(script.style)):
-            drinkBuff(script, pots)
+            drinkBuff(client, script, pots)
             moved_this_loop = True
 
         x, y = mouse.position
@@ -63,21 +64,21 @@ def nmz_check(client, script) -> None:
                 script.post("NMZ not found. Logging out.")
                 script.strings['status'].set('Ended')
                 time.sleep(getSleepTRNV(3))
-                logout(script)
+                logout(client, script)
                 break
             script.post(f"{timer} / 25 Seconds until logout.")
             time.sleep(1)
             timer += 1
 
 
-def drinkBuff(script, buffs) -> None:  # Done
+def drinkBuff(client, script, buffs) -> None:  # Done
 
     with script.lock:
 
         script.post("Drinking buff pot.")
 
         # Move to tab
-        moveToTab(tabs.inventory)
+        moveToTab(client, tabs.inventory)
         time.sleep(getSleepTRNV(1))
 
         # Move to 1st buff pot
@@ -91,14 +92,14 @@ def drinkBuff(script, buffs) -> None:  # Done
         script.post("Buff pot drank.")
 
 
-def drinkAbsorption(script, pots) -> None:  # Done
+def drinkAbsorption(client, script, pots) -> None:  # Done
 
     with script.lock:
 
         script.post("Drinking absorption pot.")
 
         # Move to tab
-        moveToTab(tabs.inventory)
+        moveToTab(client, tabs.inventory)
         time.sleep(getSleepTRNV(.3))
 
         # Limits pots to click to 3
@@ -118,7 +119,7 @@ def drinkAbsorption(script, pots) -> None:  # Done
         time.sleep(getSleepTRNV(.1))
 
 
-def flickRapidHeal(script) -> None:  # Done
+def flickRapidHeal(client, script) -> None:  # Done
 
     with script.lock:
 
@@ -126,13 +127,13 @@ def flickRapidHeal(script) -> None:  # Done
         if random.randrange(1, 10) == 1:
             script.post("Moving to prayer tab to flick. (1/10 odds)")
             # Set rapid heal rect
-            rect_coords = getTRNVCoord(rects.rapid_heal.rect)
+            rect_coords = getTRNVCoord(rects.rapid_heal)
             # Go to prayer tab if necessary
-            moveToTab(tabs.prayer)
+            moveToTab(client, tabs.prayer)
             time.sleep(getSleepTRNV(.15))
         else:
             # Set quick pray rect.
-            rect_coords = getTRNVCoord(rects.quick_pray.rects)
+            rect_coords = getTRNVCoord(rects.quick_pray)
 
         script.post("Flicking rapid heal now.")
 
@@ -175,7 +176,7 @@ def eatRockCake(script, rock) -> None:  # Done
         time.sleep(getSleepTRNV(.1))
 
 
-def logout(script) -> None:
+def logout(client, script) -> None:
 
     # Simple wait to look a bit more human
     time.sleep(getSleepTRNV(20))
@@ -185,7 +186,7 @@ def logout(script) -> None:
     with script.lock:
 
         # Move to logout tab
-        moveToTab(tabs.logout)
+        moveToTab(client, tabs.logout)
         time.sleep(getSleepTRNV(.2))
 
         # Move mouse to logout button
@@ -211,11 +212,11 @@ def moveOffScreen(client, script) -> None:
         time.sleep(getSleepTRNV(.2))
 
 
-def moveToTab(_tab: tabs) -> None:
+def moveToTab(client, _tab: tab) -> None:
     # TODO: Actually implement random chance to change using f-key (Runelite needs focus)
     # TODO: Use enums instead of strings. Try to include f-key and rect data.
     f_key = ''
-    if not _tab.selected:  # If not already on the desired tab
+    if client.current_tab != tab:  # If not already on the desired tab
         rect = _tab.rect
         if random.randint(0, 1) == 100:  # Currently never returns True. Runelite needs focus for f_key to do anything.
             # Presses f key to change tabs

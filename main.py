@@ -44,7 +44,8 @@ def runLogin():  # Copies password from file and logs in to Runelite.
 
 def runAlch():
     string_vars['status'].set('Setting up auto-alch.')
-    threading.Thread(target=autoAlch, args=(client, string_vars, lock,), daemon=True).start()
+    boss = admin('S', string_vars, lock, inventory_table)
+    threading.Thread(target=reader, args=(client, boss), daemon=True).start()
 
 
 def runNMZ():

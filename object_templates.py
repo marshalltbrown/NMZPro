@@ -1,46 +1,67 @@
-class tab:  # TODO: Finish implementing proper tab objects for code clarity
+class tab:
     def __init__(self, name: str, top_left: tuple, bottom_right: tuple, f_key=''):
         self.name = name
         self.selected = bool
         self.rect = rectangle(top_left, bottom_right)
         self.f_key = f_key
 
-    def set_offset(self, offset) -> None:
-        self.rect.set_rect(offset)
-
 
 class coord:
+    offset: tuple
+
     def __init__(self, x: int, y: int):
         self.static_x = x
         self.static_y = y
-        self.x = int
-        self.y = int
-        self.tuple = tuple
 
-    def set_offset(self, offset: tuple) -> None:
-        self.x = self.static_x + offset[0]
-        self.y = self.static_y + offset[1]
-        self.tuple = (self.x, self.y,)
+    @property
+    def x(self) -> int:
+        return self.static_x + coord.offset[0]
+
+    @property
+    def y(self) -> int:
+        return self.static_y + coord.offset[1]
+
+    @property
+    def tuple(self) -> tuple:
+        return self.x, self.y,
 
 
 class rectangle:
+    offset: tuple
+
     def __init__(self, top_left: tuple, bottom_right: tuple):
         self.left_static = top_left[0]
         self.top_static = top_left[1]
         self.right_static = bottom_right[0]
         self.bottom_static = bottom_right[1]
-        self.left = int
-        self.top = int
-        self.right = int
-        self.bottom = int
-        self.center = tuple
 
-    def set_rect(self, offset: tuple) -> None:
-        self.left = self.left_static + offset[0]
-        self.top = self.top_static + offset[1]
-        self.right = self.right_static + offset[0]
-        self.bottom = self.bottom_static + offset[1]
-        self.center = (((self.left + self.right) / 2), ((self.top + self.bottom) / 2),)
+    @property
+    def left(self) -> int:
+        return self.left_static + rectangle.offset[0]
+
+    @property
+    def top(self) -> int:
+        return self.top_static + rectangle.offset[1]
+
+    @property
+    def right(self) -> int:
+        return self.right_static + rectangle.offset[0]
+
+    @property
+    def bottom(self) -> int:
+        return self.bottom_static + rectangle.offset[1]
+
+    @property
+    def tl(self):
+        return self.left, self.top
+
+    @property
+    def br(self):
+        return self.right, self.bottom
+
+    @property
+    def center(self) -> tuple:
+        return ((self.left + self.right) / 2), ((self.top + self.bottom) / 2),
 
 
 class inv_slot:
@@ -49,6 +70,3 @@ class inv_slot:
         self.br = bottom_right
         self.rect = rectangle(self.tl, self.br)
         self.contents = '?'
-
-    def set_offset(self, offset: tuple) -> None:
-        self.rect.set_rect(offset)
