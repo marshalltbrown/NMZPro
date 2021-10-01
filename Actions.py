@@ -1,5 +1,3 @@
-import sys
-import threading
 import keyboard
 import pyautogui
 import win32ui
@@ -18,14 +16,16 @@ def NMZ(client, script):
     script.strings['status'].set('Active')
     script.post("Starting Script Now")
     while script.active:
-
+        # print(client.current_tab != tabs.inventory)
         nmz_check(client, script)
         moved_this_loop = False
         # TODO if other scripts are run, may as well flick? human like?
         if client.hp > 1 and (rock := client.get_items('(*)')):
-            eatRockCake(script, rock)
+            eatRockCake(client, script, rock)
             moved_this_loop = True
-            # TODO add something here to run a flick if there is still a chunk of time left on the clock
+            if (flick_time_threshold - time.time()) <= 20:
+                flickRapidHeal(client, script)
+                flick_time_threshold = time.time() + getTRNV(*sleep_thresh_seed)
 
         current_time = time.time()
         script.strings['health'].set(f"{client.hp} hp | {round(flick_time_threshold-current_time)} secs until pray flick.")
@@ -148,14 +148,14 @@ def flickRapidHeal(client, script) -> None:  # Done
         time.sleep(getSleepTRNV(.15))
 
 
-def eatRockCake(script, rock) -> None:  # Done
+def eatRockCake(client, script, rock) -> None:  # Done
 
     with script.lock:
 
         script.post("Guzzling rock cake.")
 
         # Move to tab
-        moveToTab(tabs.inventory)
+        moveToTab(client, tabs.inventory)
         time.sleep(getSleepTRNV(.3))
 
         # Move to rock cake
@@ -178,13 +178,12 @@ def eatRockCake(script, rock) -> None:  # Done
 
 def logout(client, script) -> None:
 
-    # Simple wait to look a bit more human
+    # Simply wait to look a bit more human
     time.sleep(getSleepTRNV(20))
 
     script.post("Logging out.")
 
     with script.lock:
-
         # Move to logout tab
         moveToTab(client, tabs.logout)
         time.sleep(getSleepTRNV(.2))
@@ -202,7 +201,6 @@ def logout(client, script) -> None:
 
 def moveOffScreen(client, script) -> None:
     with script.lock:
-
         # Moves the mouse just off the right side of the Runelite client
         moveMouse((client.rectangle.right + 10, client.rectangle.top + getSleepTRNV(300),))
         time.sleep(getSleepTRNV(.3))
@@ -214,9 +212,8 @@ def moveOffScreen(client, script) -> None:
 
 def moveToTab(client, _tab: tab) -> None:
     # TODO: Actually implement random chance to change using f-key (Runelite needs focus)
-    # TODO: Use enums instead of strings. Try to include f-key and rect data.
     f_key = ''
-    if client.current_tab != tab:  # If not already on the desired tab
+    if client.current_tab != _tab:  # If not already on the desired tab
         rect = _tab.rect
         if random.randint(0, 1) == 100:  # Currently never returns True. Runelite needs focus for f_key to do anything.
             # Presses f key to change tabs

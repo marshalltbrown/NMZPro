@@ -1,4 +1,5 @@
 import tkinter.scrolledtext as st
+import threading
 from tkinter import *
 from tkinter.ttk import Separator
 from Actions import *

@@ -7,27 +7,26 @@ from object_templates import *
 class runelite:
     def __init__(self):
         print(f"Runelite virtual client instantiated.")
-        # TODO clean up classes
-        self.client = Application().connect(path=r"C:\Users\Marshall\AppData\Local\RuneLite")['RuneLite']
 
-        # Usable vars
+        # Location vars
+        self.client = Application().connect(path=r"C:\Users\Marshall\AppData\Local\RuneLite")['RuneLite']
         self.rectangle = self.client.rectangle()
         self.offset = (self.rectangle.left, self.rectangle.top,)
+
+        # Vars
         self.current_tab = None
-
-        rectangle.offset = self.offset
-        coord.offset = self.offset
-
         self.buffed = True
-
         self.absorbs = 0
         self.hp = 1
         self.inNMZ = True
 
         # Initializations & offsets
         self.inventory = self.init_inventory()
+        rectangle.offset = self.offset
+        coord.offset = self.offset
 
-    def init_inventory(self):
+    @staticmethod
+    def init_inventory():
         # 30 px wide then a 12px usable gap between boxes 42 total
         inventory = [[inv_slot((0, 0,), (0, 0,)) for row in range(4)] for column in range(7)]
         for row, t_b in enumerate(zip(range(244, 496, 36), range(267, 519, 36))):
@@ -54,6 +53,7 @@ class runelite:
             # Updates client.offset
             self.offset = top_left
 
+            # Updates vars and data class
             rectangle.offset = top_left
             coord.offset = top_left
 
@@ -65,7 +65,6 @@ class runelite:
 
 
 class tabs():
-
     inventory = tab('Inventory', (632, 196,), (658, 229,))
     prayer = tab('Prayer', (698, 196,), (724, 229,))
     magic = tab('Magic', (749, 196,), (784, 229,))
@@ -73,7 +72,6 @@ class tabs():
 
 
 class rects():
-
     logout = rectangle((578, 445,), (708, 469,))
     quick_pray = rectangle((523, 107,), (571, 132,))
     alch = rectangle((708, 349,), (723, 365,))
