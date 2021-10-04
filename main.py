@@ -64,7 +64,10 @@ def runNMZ():
     string_vars['box'].insert('end', f"Starting NMZ script.\nStyle: {style}\n")
     boss = admin(s_style, string_vars, lock, inventory_table)
     threading.Thread(target=reader, args=(client, boss,), daemon=True).start()
-    threading.Thread(target=NMZ, args=(client, boss,), daemon=True).start()
+    if s_style == 'O':
+        threading.Thread(target=overload, args=(client, boss,), daemon=True).start()
+    else:
+        threading.Thread(target=NMZ, args=(client, boss,), daemon=True).start()
 
 # --GUI and main thread set-up.
 gui = Tk()

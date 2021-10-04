@@ -1,5 +1,8 @@
 from pywinauto.application import Application
 from enum import Enum
+
+from typing import List
+
 from utils import getTRNVCoord
 from object_templates import *
 
@@ -19,6 +22,7 @@ class runelite:
         self.absorbs = 0
         self.hp = 1
         self.inNMZ = True
+        self.overloaded = False
 
         # Initializations & offsets
         self.inventory = self.init_inventory()
@@ -34,7 +38,7 @@ class runelite:
                 inventory[row][column] = inv_slot((l_r[0], t_b[0],), (l_r[1], t_b[1],))
         return inventory
 
-    def get_items(self, item: str):
+    def get_items(self, item: str) -> list:
         items = []
         for row in range(7):
             for column in range(4):

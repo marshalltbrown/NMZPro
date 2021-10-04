@@ -6,6 +6,102 @@ from Runelite import tabs, rects, coordinates
 from object_templates import tab, rectangle, coord
 
 
+def overload(client, script):
+    mouse = Controller()
+    sleep_thresh_seed = (55, 35, 70)
+    flick_time_threshold = time.time() + getTRNV(*sleep_thresh_seed)
+    absorb_threshold = round(getTRNV(250, 180, 300))
+    overload_expiry_timer = 999999999999
+    time.sleep(7)
+    script.strings['status'].set('Active')
+    script.post("Starting Script Now")
+    while script.active:
+        if client.overloaded:
+            script.strings['buff'].set(f"Overload ends in {round(overload_expiry_timer - time.time())}")
+
+            if overload_expiry_timer - time.time() <= 30 and (o_pot := client.get_items('O')):
+                print("im in here bro")
+                flickRapidHeal(client, script)
+
+                if client.absorbs <= 200 and (pots := client.get_items('A')):
+                    drinkAbsorption(client, script, pots[:1])
+                    absorb_threshold = round(getTRNV(250, 180, 300))
+
+                if client.hp > 1 and (rock := client.get_items('(*)')):
+                    eatRockCake(client, script, rock)
+
+                moveToTab(client, tabs.prayer)
+                moveMouse(getTRNVCoord(rects.melee_prayer))
+
+                while overload_expiry_timer - time.time() >= 2:
+                    script.strings['buff'].set(f"Overload ends in {round(overload_expiry_timer - time.time())}")
+                    time.sleep(.1)
+
+                pyautogui.click()
+
+                moveToTab(client, tabs.inventory)
+                moveMouse(o_pot[0])
+                while client.overloaded:
+                    time.sleep(.0001)
+
+                pyautogui.click()
+                overload_expiry_timer = time.time() + 299
+
+                time.sleep(getSleepTRNV(5))
+
+                moveToTab(client, tabs.prayer)
+                moveMouse(getTRNVCoord(rects.melee_prayer))
+                pyautogui.click()
+                flick_time_threshold = time.time() + getTRNV(*sleep_thresh_seed)
+
+            else:
+                # print(client.current_tab != tabs.inventory)
+                nmz_check(client, script)
+                moved_this_loop = False
+                # TODO if other scripts are run, may as well flick? human like?
+                if client.hp > 1 and (rock := client.get_items('(*)')):
+                    eatRockCake(client, script, rock)
+                    moved_this_loop = True
+                    if (flick_time_threshold - time.time()) <= 20:
+                        flickRapidHeal(client, script)
+                        flick_time_threshold = time.time() + getTRNV(*sleep_thresh_seed)
+
+                current_time = time.time()
+                script.strings['health'].set(
+                    f"{client.hp} hp | {round(flick_time_threshold - current_time)} secs until pray flick.")
+                if time.time() >= flick_time_threshold:
+                    flickRapidHeal(client, script)
+                    flick_time_threshold = time.time() + getTRNV(*sleep_thresh_seed)
+                    moved_this_loop = True
+
+                script.strings['absorption'].set(f"{client.absorbs} | Drinking at {absorb_threshold}. ")
+                if client.absorbs <= absorb_threshold and (pots := client.get_items('A')):
+                    drinkAbsorption(client, script, pots)
+                    absorb_threshold = round(getTRNV(250, 180, 300))
+                    moved_this_loop = True
+
+                if not client.buffed and (pots := client.get_items(script.style)):
+                    drinkBuff(client, script, pots)
+                    moved_this_loop = True
+
+                x, y = mouse.position
+                if client.rectangle.left < x < client.rectangle.right \
+                        and client.rectangle.top < y < client.rectangle.bottom and moved_this_loop:
+                    moveOffScreen(client, script)
+
+        elif client.get_items('O'):
+            while not client.overloaded:
+                script.strings['buff'].set('Waiting on overload')
+            overload_expiry_timer = time.time() + 300
+            time.sleep(5.5)
+        else:
+            NMZ(client, script)
+
+        current_time = time.time()
+        script.strings['health'].set(f"{client.hp} hp | {round(flick_time_threshold - current_time)} secs until pray flick.")
+        script.strings['absorption'].set(f"{client.absorbs} | Drinking at {absorb_threshold}. ")
+
+
 def NMZ(client, script):
     # TODO improve workflow to appear more human
     mouse = Controller()
@@ -189,7 +285,7 @@ def logout(client, script) -> None:
         time.sleep(getSleepTRNV(.2))
 
         # Move mouse to logout button
-        moveMouse(getTRNVCoord(rects.logout.rect))
+        moveMouse(getTRNVCoord(rects.logout))
         time.sleep(getSleepTRNV(.1))
 
         # Click logout button TODO: See if a double click is needed here

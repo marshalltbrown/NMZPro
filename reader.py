@@ -18,8 +18,8 @@ def reader(client, script):
     print("Reader and dependencies initialized.")
 
     while script.active:
-        #try:
-            # Params are ( left, top, width, height )
+
+        # Params are ( left, top, width, height )
         left_pot_region = (27 + client.rectangle.left, 95 + client.rectangle.top, 29, 12,)
         right_pot_region = (90 + client.rectangle.left, 95 + client.rectangle.top, 29, 12,)
         # Check if the window has moved. If so, update client rectangles
@@ -35,7 +35,7 @@ def reader(client, script):
 
         # If in overload mode, absorptions are on the box to the left
         if script.style == 'O':
-            if script.overloaded:
+            if verifyOverload(client, img):
                 read_nmz_pot(client, script, ocr, right_pot_region)
             else:
                 read_nmz_pot(client, script, ocr, left_pot_region)
@@ -53,9 +53,20 @@ def reader(client, script):
         if not (rect.left+750 > x > rect.left+560) or not (rect.bottom > y > rect.top+207):
             readInventory(client, script.inv_strings, img)
 
-        #except Exception as e:
-            #print(e)
         time.sleep(.3)
+
+
+def verifyOverload(client, img) -> bool:
+    pot_cork_color = img.getpixel((40, 69,))
+    pot_liquid_color = img.getpixel((40, 86,))
+    result = False
+    if pixelMatchesColor(pot_cork_color, (162, 145, 62), tolerance=10) \
+            and pixelMatchesColor(pot_liquid_color, (9, 7, 7), tolerance=10):
+        client.overloaded = True
+        result = True
+    else:
+        client.overloaded = False
+    return result
 
 
 def readInventory(client, inv_strings, dc):
