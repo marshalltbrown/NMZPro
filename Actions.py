@@ -158,9 +158,11 @@ def nmz_check(client, script) -> None:
             if timer == 25:
                 script.active = False
                 script.post("NMZ not found. Logging out.")
-                script.strings['status'].set('Ended')
+                script.strings['status'].set('Program exited.')
                 time.sleep(getSleepTRNV(3))
                 logout(client, script)
+                script.post("Logged out. ALl threads closed.")
+
                 break
             script.post(f"{timer} / 25 Seconds until logout.")
             time.sleep(1)
