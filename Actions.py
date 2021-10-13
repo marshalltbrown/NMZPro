@@ -216,8 +216,7 @@ def drinkAbsorption(client, script, pots) -> None:  # Done
         time.sleep(getSleepTRNV(.1))
 
 
-def flickRapidHeal(client, script) -> None:  # Done
-
+def flickRapidHeal(client, script) -> None:
     with script.lock:
 
         # Small chance to go directly to prayer tab

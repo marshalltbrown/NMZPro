@@ -26,7 +26,7 @@ class runelite:
         rectangle.offset = self.offset
 
     @staticmethod
-    def init_inventory():
+    def init_inventory() -> [[inv_slot]]:
         # 30 px wide then a 12px usable gap between boxes 42 total
         inventory = [[inv_slot((0, 0,), (0, 0,)) for row in range(4)] for column in range(7)]
         for row, t_b in enumerate(zip(range(244, 496, 36), range(267, 519, 36))):
@@ -34,7 +34,7 @@ class runelite:
                 inventory[row][column] = inv_slot((l_r[0], t_b[0],), (l_r[1], t_b[1],))
         return inventory
 
-    def get_items(self, item: str) -> list:
+    def get_items(self, item: str) -> [rectangle]:
         items = []
         for row in range(7):
             for column in range(4):
