@@ -1,7 +1,7 @@
 import random
 
 
-def getTRNV(mean: int or float, lower: int or float, upper: int or float) -> int or float:
+def getTRNV(mean: float, lower: float, upper: float) -> float:
     result = False
     # print(f"Mean: {mean}, Upper = {upper}, lower ={lower}")
     while result < lower or result > upper:
@@ -21,10 +21,10 @@ class rectangle:
     offset: tuple
 
     def __init__(self, top_left: tuple, bottom_right: tuple):
-        self.left_static = top_left[0]
-        self.top_static = top_left[1]
-        self.right_static = bottom_right[0]
-        self.bottom_static = bottom_right[1]
+        self.left_static: float = top_left[0]
+        self.top_static: float = top_left[1]
+        self.right_static: float = bottom_right[0]
+        self.bottom_static: float = bottom_right[1]
 
     @property
     def left(self) -> int:
@@ -43,19 +43,20 @@ class rectangle:
         return self.bottom_static + rectangle.offset[1]
 
     @property
-    def tl(self):
+    def top_left_coord(self) -> tuple:
         return self.left, self.top
 
     @property
-    def br(self):
+    def bottom_right_coord(self) -> tuple:
         return self.right, self.bottom
 
     @property
-    def center(self) -> tuple:
+    def center_coord(self) -> tuple:
         return ((self.left + self.right) / 2), ((self.top + self.bottom) / 2),
 
     @property
-    def r_coord(self) -> tuple:
+    def random_coord(self) -> tuple:
+        """Returns a normally distributed random coordinate within the rectangle box."""
         mean_x = (self.right + self.left) / 2
         mean_y = (self.top + self.bottom) / 2
         x = getTRNV(mean_x, self.left, self.right)
@@ -65,7 +66,7 @@ class rectangle:
 
 class inv_slot:
     def __init__(self, top_left: tuple, bottom_right: tuple):
-        self.tl = top_left
-        self.br = bottom_right
-        self.rect = rectangle(self.tl, self.br)
-        self.contents = '?'
+        self.tl: tuple = top_left
+        self.br: tuple = bottom_right
+        self.rect: rectangle = rectangle(self.tl, self.br)
+        self.contents: str = '?'

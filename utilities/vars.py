@@ -1,28 +1,29 @@
 # Pixel checking coords
-coord_item_tab_check = 635, 200
-coord_prayer_tab_check = 705, 200
-coord_inv_slot1_1 = 582, 267
-coord_health_check_1 = 535, 85
-coord_health_check_2 = 535, 92
-coord_health_false_check = 533, 86
-coord_login_box_check = 395, 315
-coord_smelter_check = 671, 337
-
+class coords():
+    item_tab_check = 635, 200
+    prayer_tab_check = 705, 200
+    inv_slot1_1 = 582, 267
+    health_check_1 = 535, 85
+    health_check_2 = 535, 92
+    health_false_check = 533, 86
+    login_box_check = 395, 315
+    smelter_check = 671, 337
 
 
 # Colors
-color_tab_selected = 117, 40, 30
-color_user_box_is_present = 21, 20, 19
-color_health_is_present = 255, 6, 0
-color_range_potion = 36, 150, 194
-color_overload_pot = (9, 7, 7)
-color_dwarven_rock = 100, 90, 62
-color_empty_potion = 98, 98, 102
-color_inv_empty = 71, 62, 52
-color_absorption_pot = 150, 166, 174
-color_strength_pot = 186, 182, 182
-color_white = 255, 255, 255
-color_green = 0, 255, 0
+class colors():
+    tab_selected = 117, 40, 30
+    user_box_is_present = 21, 20, 19
+    health_is_present = 255, 6, 0
+    range_potion = 36, 150, 194
+    overload_pot = 9, 7, 7
+    dwarven_rock = 100, 90, 62
+    empty_potion = 98, 98, 102
+    inv_empty = 71, 62, 52
+    absorption_pot = 150, 166, 174
+    strength_pot = 186, 182, 182
+    white = 255, 255, 255
+    green = 0, 255, 0
 
 
 settings = {

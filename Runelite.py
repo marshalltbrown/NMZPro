@@ -1,7 +1,6 @@
+from typing import Optional
 from pywinauto.application import Application
-
-from utilities.utils import getTRNVCoord
-from utilities.object_templates import *
+from utilities.object_templates import rectangle, tab, inv_slot
 
 
 class runelite:
@@ -11,18 +10,18 @@ class runelite:
         # Location vars
         self.client = Application().connect(path=r"C:\Users\Marshall\AppData\Local\RuneLite")['RuneLite']
         self.rectangle = self.client.rectangle()
-        self.offset = (self.rectangle.left, self.rectangle.top,)
+        self.offset: tuple = (self.rectangle.left, self.rectangle.top,)
 
         # Vars
-        self.current_tab = None
-        self.buffed = True
-        self.absorbs = 0
-        self.hp = 1
-        self.inNMZ = True
-        self.overloaded = False
+        self.current_tab: Optional[tab] = None
+        self.buffed: bool = True
+        self.absorbs: int = 0
+        self.hp: int = 1
+        self.inNMZ: bool = True
+        self.overloaded: bool = False
 
         # Initializations & offsets
-        self.inventory = self.init_inventory()
+        self.inventory: [[inv_slot]] = self.init_inventory()
         rectangle.offset = self.offset
 
     @staticmethod
@@ -34,12 +33,12 @@ class runelite:
                 inventory[row][column] = inv_slot((l_r[0], t_b[0],), (l_r[1], t_b[1],))
         return inventory
 
-    def get_items(self, item: str) -> [rectangle]:
+    def get_item_locations(self, item: str) -> [rectangle]:
         items = []
         for row in range(7):
             for column in range(4):
                 if item in self.inventory[row][column].contents:
-                    items.append(getTRNVCoord(self.inventory[row][column].rect))
+                    items.append(self.inventory[row][column].rect.random_coord)
         return items
 
     def update_location(self) -> None:
