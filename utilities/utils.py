@@ -4,12 +4,12 @@ from math import floor
 
 import pyperclip
 from pynput.mouse import Controller
-from object_templates import rectangle
-from vars import *
-from windmouse import WindMouse
+from utilities.object_templates import rectangle
+from utilities.vars import *
+from utilities.windmouse import WindMouse
 
 
-def getTRNV(mean: int or float, lower: int or float, upper: int or float):
+def getTRNV(mean: int or float, lower: int or float, upper: int or float) -> int or float:
     result = False
     # print(f"Mean: {mean}, Upper = {upper}, lower ={lower}")
     while result < lower or result > upper:
@@ -32,8 +32,6 @@ def getTRNVCoord(rect: rectangle):
     mean_y = (rect.top + rect.bottom) / 2
     x = getTRNV(mean_x, rect.left, rect.right)
     y = getTRNV(mean_y, rect.top, rect.bottom)
-    # print(f"myrect: {mean_x}, {mean_y}")
-    # print(f"myrect: {x}, {y}")
     return x, y
 
 
@@ -90,7 +88,10 @@ def decimalColortoRGB(decimal: int):
 
 
 def readPassword():  # Reads password from the password.txt then copies it to the clipboard.
-    with open('password.txt', 'r') as reader:
+    """Copies the saved password to the clipboard.
+    :rtype: None
+    """
+    with open('assets/password.txt', 'r') as reader:
         pyperclip.copy(reader.readline())
     print('Read password from file.')
 

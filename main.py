@@ -1,3 +1,4 @@
+#!python3.8
 import tkinter.scrolledtext as st
 import threading
 from tkinter import *
@@ -10,7 +11,7 @@ from reader import reader
 
 def savePass():
     password = pass_entry.get()
-    with open('password.txt', 'w') as f:
+    with open('assets/password.txt', 'w') as f:
         f.write(password)
         string_vars['box'].insert('end', "New password saved.\n")
     pass_entry.delete(0, 'end')
@@ -18,7 +19,7 @@ def savePass():
 
 
 def readPassword():  # Reads password from the password.txt then copies it to the clipboard.
-    with open('password.txt', 'r') as f:
+    with open('assets/password.txt', 'r') as f:
         data = f.readline()
     password = 'No password saved'
     data_length = len(data)

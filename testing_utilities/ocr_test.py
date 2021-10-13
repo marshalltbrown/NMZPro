@@ -5,8 +5,6 @@ from PIL import Image
 import pyautogui
 import time
 import numpy as np
-import os
-from mpl_toolkits.mplot3d import Axes3D
 
 
 from matplotlib import pyplot as plt, cm, colors

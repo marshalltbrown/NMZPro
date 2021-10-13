@@ -1,9 +1,8 @@
 import keyboard
 import pyautogui
-import win32ui
-from utils import *
-from Runelite import tabs, rects, coordinates
-from object_templates import tab, rectangle, coord
+from utilities.utils import *
+from Runelite import tabs, rects
+from utilities.object_templates import tab
 
 
 def overload(client, script):
@@ -330,17 +329,20 @@ def moveToTab(client, _tab: tab) -> None:
 def login(client, script) -> None:  # Takes control of the mouse and keyboard to login to Runelite.
     script.post('Beginning login script.')
     readPassword()
-    client.setFocus()
-    window = win32ui.FindWindow(None, "RuneLite")
-    dc = window.GetWindowDC()
-    current_color = dc.GetPixel(*coord_login_box_check)
+
+    # Set Runelite screenshot rect
+    rect = client.rectangle
+    runelite_region = (rect.left, rect.top, (rect.right - rect.left), (rect.bottom - rect.top))
+    img = pyautogui.screenshot(region=runelite_region)
+
+    current_color = img.getpixel(coord_login_box_check)
     if pixelMatchesColor(current_color, color_user_box_is_present, tolerance=10):
         script.post("Clicking \"Existing user\" box.")
-        moveMouse(coordinates.existing_user_login_box.tuple)
+        moveMouse(rects.existing_user.r_coord)
         time.sleep(getSleepTRNV(.4))
         pyautogui.click()
         time.sleep(getSleepTRNV(1))
-    moveMouse(coordinates.pass_input_area.tuple)
+    moveMouse(rects.password_input.r_coord)
     time.sleep(getSleepTRNV(.2))
     pyautogui.click()
     time.sleep(getSleepTRNV(.2))

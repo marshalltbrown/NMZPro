@@ -1,14 +1,10 @@
-import threading
 import cv2
-import win32ui
 from PIL import Image
 import numpy as np
-from pywinauto import Application
-import time
-from utils import *
+from utilities.utils import *
 import pyautogui
 from easyocr import Reader
-from Runelite import tabs, rects, coordinates
+from Runelite import tabs
 
 
 def reader(client, script):

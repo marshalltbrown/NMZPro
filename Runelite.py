@@ -1,10 +1,7 @@
 from pywinauto.application import Application
-from enum import Enum
 
-from typing import List
-
-from utils import getTRNVCoord
-from object_templates import *
+from utilities.utils import getTRNVCoord
+from utilities.object_templates import *
 
 
 class runelite:
@@ -27,7 +24,6 @@ class runelite:
         # Initializations & offsets
         self.inventory = self.init_inventory()
         rectangle.offset = self.offset
-        coord.offset = self.offset
 
     @staticmethod
     def init_inventory():
@@ -59,7 +55,6 @@ class runelite:
 
             # Updates vars and data class
             rectangle.offset = top_left
-            coord.offset = top_left
 
             print('Updated client')
 
@@ -81,8 +76,5 @@ class rects():
     alch = rectangle((708, 349,), (723, 365,))
     rapid_heal = rectangle((706, 281,), (733, 307,))
     melee_prayer = rectangle((671, 360,), (694, 380,))
-
-
-class coordinates():
-    pass_input_area = coord(350, 289)
-    existing_user_login_box = coord(395, 315)
+    existing_user = rectangle((399, 303,), (533, 334,))
+    password_input = rectangle((346, 286,), (514, 298,))

@@ -1,24 +1,40 @@
-# NMZPro
+#NMZPro
 Project with the goal of creating the perfect NMZ emulator.
 
-Runelite NMZ plugin settings:
+Current support for absorption/rock-cake methods:
 
-• "Override NMZ Overlay" must be turned off.
+• Ranging using NMZ Super ranging pots.
 
-Runelite widget settings:
+• Strength using super strength pots.
 
-• There must be no widgets in the top left corner.
+##Required window settings:
+
+• Must use fixed - classic layout
+
+• Minimum size only
+
+![img.png](assets/window_settings.png)
+
+
+##Runelite NMZ plugin settings:
+
+![img.png](assets/nmz_plugin_settings.png)
+
+
+##Runelite overlay settings:
+
+![img.png](assets/overlay_settings.png)
+
+##General Window Setup: 
+
+• There must be no widgets (other than absorption pots remaining) in the top left corner.
 
 • Potion buff info must be in the bottom left
     
 • Under Runelite "Boosts Information", turn on "Use Relative Boosts"
 
-• Turn ammo plugin off. It obstructs the buff timer. 
+• Turn ammo plugin off. It obstructs the buff timer.
 
-Required window settings:
+Your setup in general should look like this:
 
-• Must use fixed - classic layout
-
-• Minimum size only (Plans to change this in the future)
-
-![img.png](img.png)
+![](assets/sample_setup.jpg)

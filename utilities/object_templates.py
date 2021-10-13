@@ -1,29 +1,20 @@
+import random
+
+
+def getTRNV(mean: int or float, lower: int or float, upper: int or float) -> int or float:
+    result = False
+    # print(f"Mean: {mean}, Upper = {upper}, lower ={lower}")
+    while result < lower or result > upper:
+        result = random.normalvariate(mean, (upper-lower) / 4)
+    return result
+
+
 class tab:
     def __init__(self, name: str, top_left: tuple, bottom_right: tuple, f_key=''):
         self.name = name
         self.selected = bool
         self.rect = rectangle(top_left, bottom_right)
         self.f_key = f_key
-
-
-class coord:
-    offset: tuple
-
-    def __init__(self, x: int, y: int):
-        self.static_x = x
-        self.static_y = y
-
-    @property
-    def x(self) -> int:
-        return self.static_x + coord.offset[0]
-
-    @property
-    def y(self) -> int:
-        return self.static_y + coord.offset[1]
-
-    @property
-    def tuple(self) -> tuple:
-        return self.x, self.y,
 
 
 class rectangle:
@@ -62,6 +53,14 @@ class rectangle:
     @property
     def center(self) -> tuple:
         return ((self.left + self.right) / 2), ((self.top + self.bottom) / 2),
+
+    @property
+    def r_coord(self) -> tuple:
+        mean_x = (self.right + self.left) / 2
+        mean_y = (self.top + self.bottom) / 2
+        x = getTRNV(mean_x, self.left, self.right)
+        y = getTRNV(mean_y, self.top, self.bottom)
+        return x, y
 
 
 class inv_slot:

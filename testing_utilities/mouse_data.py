@@ -1,6 +1,5 @@
 from pynput.mouse import Controller
 import matplotlib.pyplot as plt
-import numpy as np
 import keyboard
 import time
 
