@@ -111,9 +111,11 @@ def NMZ(client, script):
     time.sleep(7)
     script.strings['status'].set('Active')
     script.post("Starting Script Now")
+    script.start_time = time.time()
     while script.active:
-        # print(client.current_tab != tabs.inventory)
-        nmz_check(client, script)
+        # If the client does not have absorbs active, logout, end script, and break the loop.
+        if not nmz_check(client, script):
+            break
         moved_this_loop = False
         # TODO if other scripts are run, may as well flick? human like?
         if client.hp > 1 and (rock := client.get_item_locations('(*)')):
@@ -149,23 +151,31 @@ def NMZ(client, script):
         time.sleep(.2)
 
 
-def nmz_check(client, script) -> None:
-    if not client.inNMZ:
+def nmz_check(client, script) -> bool:
+    """Checks if the client has absorption pots active. This indicates that the player is in NMZ
+    if there are no absorbs left, it returns False, Otherwise it returns True."""
+    if not client.inNMZ:  # Bool set in reader class
         timer = 1
-        while timer <= 25:
+        exit_timer = 25
+        while timer <= exit_timer:
             if client.inNMZ:
                 script.post('NMZ Found | Resuming script')
-                break
-            if timer == 25:
+                script.strings['status'].set('Active')
+                return True
+            if timer == exit_timer:
                 script.active = False
-                script.post("NMZ not found. Logging out.")
-                script.strings['status'].set('Program exited.')
-                time.sleep(getSleepTRNV(3))
+                script.post("Exit timer limit reached | Logging out")
+                script.strings['status'].set('Program complete')
+                time.sleep(getSleepTRNV(10))
                 logout(client, script)
-                script.post("Logged out. ALl threads closed.")
-
-                break
-            script.post(f"{timer} / 25 Seconds until logout.")
+                script.end_time = time.time()
+                elapsed_time_string = time.strftime("%H:%M:%S", time.gmtime(script.end_time - script.start_time))
+                script.post(f"Total runtime: {elapsed_time_string}")
+                script.post("Logged out & aLl threads have been terminated.")
+                return False
+            if timer == 2:
+                script.post('NMZ Not Found | Pausing script')
+            script.strings['status'].set(f"{timer} / {exit_timer} Seconds until logout.")
             time.sleep(1)
             timer += 1
 
