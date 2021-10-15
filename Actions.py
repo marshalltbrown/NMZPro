@@ -121,8 +121,7 @@ def NMZ(client, script):
         if client.hp > 1 and (rock := client.get_item_locations('(*)')):
             eatRockCake(client, script, rock)
             moved_this_loop = True
-            if (flick_time_threshold - time.time()) <= 20:
-                flick_time_threshold = time.time() + getTRNV(*sleep_thresh_seed)
+            flick_time_threshold = time.time() + getTRNV(50, 30, 60)
 
         current_time = time.time()
         script.strings['health'].set(
@@ -134,11 +133,15 @@ def NMZ(client, script):
 
         script.strings['absorption'].set(f"{client.absorbs} | Drinking at {absorb_threshold}. ")
         if client.absorbs <= absorb_threshold and (pots := client.get_item_locations('A')):
+            if (flick_time_threshold - time.time()) <= 30:
+                flickRapidHeal(client, script)
             drinkAbsorption(client, script, pots)
             absorb_threshold = round(getTRNV(250, 180, 300))
             moved_this_loop = True
 
         if not client.buffed and (pots := client.get_item_locations(script.style)):  # TODO: Add OCR for buff pot&random
+            if (flick_time_threshold - time.time()) <= 30:
+                flickRapidHeal(client, script)
             drinkBuff(client, script, pots)
             moved_this_loop = True
 
