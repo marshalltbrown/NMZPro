@@ -109,7 +109,7 @@ def NMZ(client, script):
     flick_time_threshold = time.time() + getTRNV(*sleep_thresh_seed)
     absorb_threshold = round(getTRNV(250, 180, 300))
     time.sleep(7)
-    script.strings['status'].set('Active')
+    script.strings['status'].set(f'Active | {script.style}')
     script.post("Starting Script Now")
     script.start_time = time.time()
     while script.active:
@@ -129,6 +129,8 @@ def NMZ(client, script):
         if time.time() >= flick_time_threshold:
             flickRapidHeal(client, script)
             flick_time_threshold = time.time() + getTRNV(*sleep_thresh_seed)
+            if client.hp > 1 and (rock := client.get_item_locations('(*)')):
+                eatRockCake(client, script, rock)
             moved_this_loop = True
 
         script.strings['absorption'].set(f"{client.absorbs} | Drinking at {absorb_threshold}. ")
@@ -162,7 +164,7 @@ def nmz_check(client, script) -> bool:
         while timer <= exit_timer:
             if client.inNMZ:
                 script.post('NMZ Found | Resuming script')
-                script.strings['status'].set('Active')
+                script.strings['status'].set(f'Active | {script.style}')
                 return True
             if timer == exit_timer:
                 script.active = False
@@ -180,6 +182,8 @@ def nmz_check(client, script) -> bool:
             script.strings['status'].set(f"{timer} / {exit_timer} Seconds until logout.")
             time.sleep(1)
             timer += 1
+    else:
+        return True
 
 
 def drinkBuff(client, script, buffs) -> None:  # Done
