@@ -1,103 +1,79 @@
+from typing import Optional
 from pywinauto.application import Application
+from utilities.object_templates import rectangle, tab, inv_slot
 
 
 class runelite:
     def __init__(self):
         print(f"Runelite virtual client instantiated.")
 
+        # Location vars
         self.client = Application().connect(path=r"C:\Users\Marshall\AppData\Local\RuneLite")['RuneLite']
-        self.offset = (self.client.rectangle().left, self.client.rectangle().top,)
-        self.training_style = 'R'  # Change this to S (Strength pot) or R (range pot)
-
-        # Usable vars
         self.rectangle = self.client.rectangle()
-        self.tab = 'Unknown'
-        self.health = 'Unknown'
-        self.absorption = 'Pending'
-        self.buff = 'Pending'
+        self.offset: tuple = (self.rectangle.left, self.rectangle.top,)
 
-        # Script vars
-        self.eating = 'Pending'
-        self.nmz_running = False
-        self.flicking = False
-        self.absorbs_remaining = True
-        self.buffs_remaining = True
-        self.inNMZ = True
+        # Vars
+        self.current_tab: Optional[tab] = None
+        self.buffed: bool = True
+        self.absorbs: int = 0
+        self.hp: int = 1
+        self.inNMZ: bool = True
+        self.overloaded: bool = False
 
-        # Init Rectangles
-        self.rect_alch = None
-        self.rect_rapid_heal = None
-        self.rect_rock_cake = None
-        self.coord_login_entry = None
-        self.coord_existing_user = None
-        self.rect_styles_tab = None
-        self.rect_levels_tab = None
-        self.rect_quest_tab = None
-        self.rect_inventory_tab = None
-        self.rect_gear_tab = None
-        self.rect_prayer_tab = None
-        self.rect_magic_tab = None
-        self.rect_logout_tab = None
-        self.rect_logout_button = None
-        self.rect_quick_pray = None
+        # Initializations & offsets
+        self.inventory: [[inv_slot]] = self.init_inventory()
+        rectangle.offset = self.offset
 
-        self.inventory = self.init_inventory()
+    @staticmethod
+    def init_inventory() -> [[inv_slot]]:
+        # 30 px wide then a 12px usable gap between boxes 42 total
+        inventory = [[inv_slot((0, 0,), (0, 0,)) for row in range(4)] for column in range(7)]
+        for row, t_b in enumerate(zip(range(244, 496, 36), range(267, 519, 36))):
+            for column, l_r in enumerate(zip(range(568, 736, 42), range(597, 765, 42))):
+                inventory[row][column] = inv_slot((l_r[0], t_b[0],), (l_r[1], t_b[1],))
+        return inventory
 
-    def update(self):
-        self.rectangle = self.client.rectangle()
-        self.offset = (self.client.rectangle().left, self.client.rectangle().top,)
-        self.update_rectangles(self.offset)
+    def get_item_locations(self, item: str) -> [rectangle]:
+        items = []
         for row in range(7):
             for column in range(4):
-                self.inventory[row][column].set_rect(self.offset)
+                if item in self.inventory[row][column].contents:
+                    items.append(self.inventory[row][column].rect.random_coord)
+        return items
 
-    def setFocus(self):
+    def update_location(self) -> None:
+        r = self.client.rectangle()
+        self.rectangle = r
+        top_left = (r.left, r.top,)
+        if top_left != self.offset:
+            bottom_right = (r.right, r.bottom,)
+            # Updates client.rectangle
+            self.rectangle = rectangle(top_left, bottom_right)
+            # Updates client.offset
+            self.offset = top_left
+
+            # Updates vars and data class
+            rectangle.offset = top_left
+
+            print('Updated client')
+
+    def setFocus(self) -> None:
         if self.client.exists():
             self.client.set_focus()
 
-    def init_inventory(self):
-        # 30 px wide then a 12px usable gap between boxes 42 total
-        inventory = [[None for row in range(4)] for column in range(7)]
-        for row, t_b in enumerate(zip(range(244, 496, 36), range(267, 519, 36))):
-            for column, l_r in enumerate(zip(range(568, 736, 42), range(597, 765, 42))):
-                inventory[row][column] = inv_slot((l_r[0], t_b[0],), (l_r[1], t_b[1],), self.offset)
-        return inventory
 
-    def update_rectangles(self, offset):
-        self.rect_styles_tab = rectangle((527, 196,), (562, 229,), offset)
-        self.rect_levels_tab = rectangle((564, 196,), (599, 229,), offset)
-        self.rect_quest_tab = rectangle((601, 196,), (634, 229,), offset)
-        self.rect_inventory_tab = rectangle((632, 196,), (658, 229,), offset)
-        self.rect_gear_tab = rectangle((675, 196,), (710, 229,), offset)
-        self.rect_prayer_tab = rectangle((698, 196,), (724, 229,), offset)
-        self.rect_magic_tab = rectangle((749, 196,), (784, 229,), offset)
-        self.rect_logout_tab = rectangle((634, 497,), (660, 523,), offset)
-
-        self.rect_logout_button = rectangle((578, 445,), (708, 469,), offset)
-        self.rect_quick_pray = rectangle((523, 107,), (571, 132,), offset)
-        self.rect_alch = rectangle((708, 349,), (723, 365,), offset)
-        self.rect_rapid_heal = rectangle((706, 281,), (733, 307,), offset)
-
-        self.coord_login_entry = (350+offset[0], 289+offset[1],)
-        self.coord_existing_user = (395+offset[0], 315+offset[1],)
+class tabs():
+    inventory = tab('Inventory', (632, 196,), (658, 229,))
+    prayer = tab('Prayer', (698, 196,), (724, 229,))
+    magic = tab('Magic', (749, 196,), (784, 229,))
+    logout = tab('Logout', (634, 497,), (660, 523,))
 
 
-class inv_slot:
-    def __init__(self, top_left, bottom_right, offset):
-        self.tl = top_left
-        self.br = bottom_right
-        self.rect = self.set_rect(offset)
-        self.contents = '?'
-
-    def set_rect(self, offset):
-        self.rect = rectangle(self.tl, self.br, offset)
-
-
-class rectangle:
-    def __init__(self, top_left, bottom_right, offset):
-        offset_x, offset_y = offset
-        self.left = top_left[0] + offset_x
-        self.top = top_left[1] + offset_y
-        self.right = bottom_right[0] + offset_x
-        self.bottom = bottom_right[1] + offset_y
-        self.center = (((self.left + self.right) / 2), ((self.top + self.bottom) / 2),)
+class rects():
+    logout = rectangle((578, 445,), (708, 469,))
+    quick_pray = rectangle((523, 107,), (571, 132,))
+    alch = rectangle((708, 349,), (723, 365,))
+    rapid_heal = rectangle((706, 281,), (733, 307,))
+    melee_prayer = rectangle((671, 360,), (694, 380,))
+    existing_user = rectangle((399, 303,), (533, 334,))
+    password_input = rectangle((346, 286,), (514, 298,))

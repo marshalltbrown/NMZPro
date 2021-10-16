@@ -131,5 +131,13 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
-/Notes.txt
-/coordinate wizard.py
+/utilities/Notes.txt
+/testing_utilities/coordinate wizard.py
+
+#Local test files
+/testing_utilities/ocr_test.py
+/testing_utilities/mouse_data.py
+/buff_test.py
+/img/
+/assets/password.txt
+/run_py.bat

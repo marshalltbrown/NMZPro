@@ -1,16 +1,29 @@
-import tkinter.scrolledtext as st
+#!python3.8
+
+import threading
+
 from tkinter import *
 from tkinter.ttk import Separator
+import tkinter.scrolledtext as st
+from typing import Optional
 
-from Actions import *
+from Actions import login, NMZ, overload
 from Runelite import runelite
 from Controllers import admin
 from reader import reader
 
 
+def get_client() -> Optional[runelite]:
+    try:
+        return runelite()  # Object from Runelite.py class. Used for client data.
+    except Exception as e:
+        string_vars['box'].insert('end', "Runelite not found. Make sure Runelite is on screen before continuing.\n")
+        return None
+
+
 def savePass():
     password = pass_entry.get()
-    with open('password.txt', 'w') as f:
+    with open('assets/password.txt', 'w') as f:
         f.write(password)
         string_vars['box'].insert('end', "New password saved.\n")
     pass_entry.delete(0, 'end')
@@ -18,7 +31,7 @@ def savePass():
 
 
 def readPassword():  # Reads password from the password.txt then copies it to the clipboard.
-    with open('password.txt', 'r') as f:
+    with open('assets/password.txt', 'r') as f:
         data = f.readline()
     password = 'No password saved'
     data_length = len(data)
@@ -29,37 +42,44 @@ def readPassword():  # Reads password from the password.txt then copies it to th
     return password
 
 
-def startListener():  # Generates thread on the referenced function.
-    print(f'Generating new thread for reader.')
-    threading.Thread(target=reader, args=(client, string_vars, inventory_table,), daemon=True).start()
-
-
 def runLogin():  # Copies password from file and logs in to Runelite.
-    with lock:
-        string_vars['status'].set('Logging in')
-        threading.Thread(target=login, args=(client, string_vars,), daemon=True).start()
-        string_vars['status'].set('Idle')
+    if client := get_client():
+        with lock:
+            string_vars['status'].set('Logging in')
+            boss = admin('Null', string_vars, lock, inventory_table)
+            threading.Thread(target=login, args=(client, boss,), daemon=True).start()
+            string_vars['status'].set('Idle')
 
 
 def runAlch():
-    string_vars['status'].set('Setting up auto-alch.')
-    threading.Thread(target=autoAlch, args=(client, string_vars, lock,), daemon=True).start()
+    if client := get_client():
+        string_vars['status'].set('Setting up auto-alch.')
+        boss = admin('Null', string_vars, lock, inventory_table)
+        threading.Thread(target=reader, args=(client, boss), daemon=True).start()
 
 
 def runNMZ():
-    string_vars['status'].set('Loading...')
-    style = options_var.get()
-    if style == 'Strength':
-        client.training_style = 'S'
-    elif style == 'Mage':
-        client.training_style = 'M'
-    else:
-        client.training_style = 'R'
+    if client := get_client():
+        string_vars['status'].set('Loading...')
+        style = options_var.get()
+        if style == 'Strength':
+            s_style = 'S'
+        elif style == 'Mage':
+            s_style = 'M'
+        elif style == 'Overload':
+            s_style = 'O'
+        else:
+            s_style = 'R'
 
-    string_vars['box'].insert('end', f"Starting NMZ script.\nStyle: {style}\n")
+        string_vars['box'].insert('end', f"Starting NMZ script.\nStyle: {style}\n")
+        boss = admin(s_style, string_vars, lock, inventory_table)
 
-    startListener()
-    threading.Thread(target=NMZ, args=(client, string_vars, lock, inventory_table,), daemon=True).start()
+        threading.Thread(target=reader, args=(client, boss,), daemon=True).start()
+
+        if s_style == 'O':
+            threading.Thread(target=overload, args=(client, boss,), daemon=True).start()
+        else:
+            threading.Thread(target=NMZ, args=(client, boss,), daemon=True).start()
 
 # --GUI and main thread set-up.
 gui = Tk()
@@ -114,7 +134,7 @@ pass_entry.grid(row=0, column=1, pady=(10, 0), sticky='e')
 save_button = Button(button_frame, text='Save', width=7, command=lambda: savePass()).grid(row=0, column=2, padx=10, pady=(10, 0), sticky='e')
 options_var = StringVar()
 options_var.set('Ranging')
-option_menu = OptionMenu(button_frame, options_var, 'Ranging', 'Strength', 'Mage')
+option_menu = OptionMenu(button_frame, options_var, 'Ranging', 'Strength', 'Mage', 'Overload')
 option_menu.grid(row=2, column=2, sticky='w')
 
 # -Vertical separator
@@ -142,9 +162,6 @@ string_vars['box'].grid(row=4, column=0, columnspan=4, padx=(10, 0), pady=(20, 0
 string_vars['box'].insert('end', "Program initiated.\n")
 string_vars['box'].configure(state='normal')
 
-try:
-    client = runelite()  # Object from Runelite.py class. Used for client data.
-except:
-    string_vars['box'].insert('end', "Runelite not found. Make sure Runelite is on screen before continuing.\n")
+get_client()  # Checks if runelite is active
 
 gui.mainloop()  # Accessible code above this point.
