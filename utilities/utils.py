@@ -1,13 +1,12 @@
 import random
 import time
-from math import floor, sqrt
-
+from math import floor
+import pyautogui
 import numpy as np
-from pynput.mouse import Controller
 from scipy.special import comb
 
 
-def getTRNV(mean: float, lower: float, upper: float) -> float:
+def get_random(mean: float, lower: float, upper: float) -> float:
     result = False
     while result < lower or result > upper:
         result = random.normalvariate(mean, (upper-lower) / 4)
@@ -46,23 +45,19 @@ def pixelMatchesColor(sampled_color, test_color, tolerance=0) -> bool:
 
     if len(sampled_color) == 3 or len(test_color) == 3:  # RGB mode
         r, g, b = sampled_color[:3]
-        exR, exG, exB = test_color[:3]
-        return (abs(r - exR) <= tolerance)\
-               and (abs(g - exG) <= tolerance)\
-               and (abs(b - exB) <= tolerance)
+        ex_r, ex_g, ex_b = test_color[:3]
+        return (abs(r - ex_r) <= tolerance) and (abs(g - ex_g) <= tolerance) and (abs(b - ex_b) <= tolerance)
     elif len(sampled_color) == 4 and len(test_color) == 4:  # RGBA mode
         r, g, b, a = sampled_color
-        exR, exG, exB, exA = test_color
-        return (abs(r - exR) <= tolerance)\
-            and (abs(g - exG) <= tolerance)\
-            and (abs(b - exB) <= tolerance)\
-            and (abs(a - exA) <= tolerance)
+        ex_r, ex_g, ex_b, ex_a = test_color
+        return (abs(r - ex_r) <= tolerance)\
+            and (abs(g - ex_g) <= tolerance)\
+            and (abs(b - ex_b) <= tolerance)\
+            and (abs(a - ex_a) <= tolerance)
     else:
-        assert False, 'Color mode was expected to be length 3 (RGB) or 4 (RGBA), but pixel is length %s and expectedRGBColor is length %s' % (len(sampled_color), len(test_color))
-
-
-def Hypot(dx, dy):
-    return sqrt(dx * dx + dy * dy)
+        assert False, 'Color mode was expected to be length 3 (RGB) or 4 (RGBA),' \
+                      ' but pixel is length %s and expectedRGBColor is length %s'\
+                      % (len(sampled_color), len(test_color))
 
 
 class WindMouse:
@@ -74,7 +69,6 @@ class WindMouse:
         self.wind = settings['wind']
         self.max_step = settings['maxStep']
         self.target_distance = settings['targetArea']
-        self.mouse = Controller()
 
     @staticmethod
     def bernstein_poly(i, n, t):
@@ -86,21 +80,25 @@ class WindMouse:
 
     def moveMouse(self, end_coords: tuple) -> None:
 
+        pyautogui.MINIMUM_DURATION = 0
+        pyautogui.FAILSAFE = False
+        pyautogui.PAUSE = 0
         movement_path = []
-        self.GeneratePoints(self.mouse.position, end_coords, move_mouse=lambda x, y: movement_path.append([x, y]))
+        self.GeneratePoints(pyautogui.position(), end_coords, move_mouse=lambda x, y: movement_path.append([x, y]))
+        print(f"Number of point in path: {len(movement_path)}")
         movement_delays = WindMouse.generate_mouse_movement_sleep_array(len(movement_path))
 
         for i in range(len(movement_path)):
             new_x, new_y = movement_path[i]
-            old_x, old_y = self.mouse.position
-            self.mouse.move(new_x - old_x, new_y - old_y)
+            pyautogui.moveTo(new_x, new_y)
             time.sleep(movement_delays[i])
 
     @staticmethod
     def generate_mouse_movement_sleep_array(number_of_points: int) -> [float]:
-        curve_points = [.01, .01, .041]  # This defines the curve distribution of the array
+        curve_points = [.01, .01, .03]  # This defines the curve distribution of the array
         t = np.linspace(0.0, 1.0, number_of_points)
-        polynomial_array = np.array([WindMouse.bernstein_poly(i, len(curve_points) - 1, t) for i in range(0, len(curve_points))])
+        polynomial_array = np.array(
+            [WindMouse.bernstein_poly(i, len(curve_points) - 1, t) for i in range(0, len(curve_points))])
         sleep_array = reversed(np.dot(np.array(curve_points), polynomial_array))
         sleep_array = [float(i) for i in sleep_array]
         return sleep_array
@@ -116,22 +114,22 @@ class WindMouse:
         """
         start_x, start_y = starting_point
         current_x, current_y = start_x, start_y
-        dest_x, dest_y = destination_point
-        v_x = v_y = W_x = W_y = 0
-        while (dist := np.hypot(dest_x - start_x, dest_y - start_y)) >= 1:
-            W_mag = min(self.wind, dist)
+        destination_x, destination_y = destination_point
+        v_x = v_y = w_x = w_y = 0
+        while (dist := np.hypot(destination_x - start_x, destination_y - start_y)) >= 1:
+            w_mag = min(self.wind, dist)
             if dist >= self.target_distance:
-                W_x = W_x / self.sqrt3 + (2 * np.random.random() - 1) * W_mag / self.sqrt5
-                W_y = W_y / self.sqrt3 + (2 * np.random.random() - 1) * W_mag / self.sqrt5
+                w_x = w_x / self.sqrt3 + (2 * np.random.random() - 1) * w_mag / self.sqrt5
+                w_y = w_y / self.sqrt3 + (2 * np.random.random() - 1) * w_mag / self.sqrt5
             else:
-                W_x /= self.sqrt3
-                W_y /= self.sqrt3
+                w_x /= self.sqrt3
+                w_y /= self.sqrt3
                 if self.max_step < 3:
                     self.max_step = np.random.random() * 3 + 3
                 else:
                     self.max_step /= self.sqrt5
-            v_x += W_x + self.gravity * (dest_x - start_x) / dist
-            v_y += W_y + self.gravity * (dest_y - start_y) / dist
+            v_x += w_x + self.gravity * (destination_x - start_x) / dist
+            v_y += w_y + self.gravity * (destination_y - start_y) / dist
             v_mag = np.hypot(v_x, v_y)
             if v_mag > self.max_step:
                 v_clip = self.max_step / 2 + np.random.random() * self.max_step / 2

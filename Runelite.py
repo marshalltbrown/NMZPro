@@ -5,8 +5,6 @@ from utilities.object_templates import rectangle, tab, inv_slot
 
 class runelite:
     def __init__(self):
-        print(f"Runelite virtual client instantiated.")
-
         # Location vars
         self.client = Application().connect(path=r"C:\Users\Marshall\AppData\Local\RuneLite")['RuneLite']
         self.rectangle = self.client.rectangle()
@@ -27,7 +25,7 @@ class runelite:
     @staticmethod
     def init_inventory() -> [[inv_slot]]:
         # 30 px wide then a 12px usable gap between boxes 42 total
-        inventory = [[inv_slot((0, 0,), (0, 0,)) for row in range(4)] for column in range(7)]
+        inventory = [[inv_slot((0, 0,), (0, 0,)) for _row in range(4)] for _column in range(7)]
         for row, t_b in enumerate(zip(range(244, 496, 36), range(267, 519, 36))):
             for column, l_r in enumerate(zip(range(568, 736, 42), range(597, 765, 42))):
                 inventory[row][column] = inv_slot((l_r[0], t_b[0],), (l_r[1], t_b[1],))
@@ -62,14 +60,14 @@ class runelite:
             self.client.set_focus()
 
 
-class tabs():
+class tabs:
     inventory = tab('Inventory', (632, 196,), (658, 229,))
     prayer = tab('Prayer', (698, 196,), (724, 229,))
     magic = tab('Magic', (749, 196,), (784, 229,))
     logout = tab('Logout', (634, 497,), (660, 523,))
 
 
-class rects():
+class rects:
     logout = rectangle((578, 445,), (708, 469,))
     quick_pray = rectangle((523, 107,), (571, 132,))
     alch = rectangle((708, 349,), (723, 365,))

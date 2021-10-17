@@ -1,16 +1,17 @@
 import keyboard
 import pyautogui
-from utilities.utils import *
+import time
+import random
+from utilities.utils import get_random, getSleepTRNV, pixelMatchesColor
 from Runelite import tabs, rects
 from utilities.object_templates import tab
 from utilities.vars import coords, colors
 
 
 def overload(client, script):
-    mouse = Controller()
     sleep_thresh_seed = (55, 35, 70)
-    flick_time_threshold = time.time() + getTRNV(*sleep_thresh_seed)
-    absorb_threshold = round(getTRNV(250, 180, 300))
+    flick_time_threshold = time.time() + get_random(*sleep_thresh_seed)
+    absorb_threshold = round(get_random(250, 180, 300))
     overload_expiry_timer = 999999999999
     time.sleep(7)
     script.strings['status'].set('Active')
@@ -25,12 +26,12 @@ def overload(client, script):
 
                 if client.absorbs <= 200 and (pots := client.get_item_locations('A')):
                     drinkAbsorption(client, script, pots[:1])
-                    absorb_threshold = round(getTRNV(250, 180, 300))
+                    absorb_threshold = round(get_random(250, 180, 300))
 
                 if client.hp > 1 and (rock := client.get_item_locations('(*)')):
                     eatRockCake(client, script, rock)
 
-                moveToTab(client, tabs.prayer)
+                moveToTab(client, script, tabs.prayer)
                 script.mouse.moveMouse(rects.melee_prayer.random_coord)
 
                 while overload_expiry_timer - time.time() >= 2:
@@ -39,7 +40,7 @@ def overload(client, script):
 
                 pyautogui.click()
 
-                moveToTab(client, tabs.inventory)
+                moveToTab(client, script, tabs.inventory)
                 script.mouse.moveMouse(o_pot[0])
                 while client.overloaded:
                     time.sleep(.0001)
@@ -49,10 +50,10 @@ def overload(client, script):
 
                 time.sleep(getSleepTRNV(5))
 
-                moveToTab(client, tabs.prayer)
+                moveToTab(client, script, tabs.prayer)
                 script.mouse.moveMouse(rects.melee_prayer.random_coord)
                 pyautogui.click()
-                flick_time_threshold = time.time() + getTRNV(*sleep_thresh_seed)
+                flick_time_threshold = time.time() + get_random(*sleep_thresh_seed)
 
             else:
                 # print(client.current_tab != tabs.inventory)
@@ -64,27 +65,27 @@ def overload(client, script):
                     moved_this_loop = True
                     if (flick_time_threshold - time.time()) <= 20:
                         flickRapidHeal(client, script)
-                        flick_time_threshold = time.time() + getTRNV(*sleep_thresh_seed)
+                        flick_time_threshold = time.time() + get_random(*sleep_thresh_seed)
 
                 current_time = time.time()
                 script.strings['health'].set(
                     f"{client.hp} hp | {round(flick_time_threshold - current_time)} secs until pray flick.")
                 if time.time() >= flick_time_threshold:
                     flickRapidHeal(client, script)
-                    flick_time_threshold = time.time() + getTRNV(*sleep_thresh_seed)
+                    flick_time_threshold = time.time() + get_random(*sleep_thresh_seed)
                     moved_this_loop = True
 
                 script.strings['absorption'].set(f"{client.absorbs} | Drinking at {absorb_threshold}. ")
                 if client.absorbs <= absorb_threshold and (pots := client.get_item_locations('A')):
                     drinkAbsorption(client, script, pots)
-                    absorb_threshold = round(getTRNV(250, 180, 300))
+                    absorb_threshold = round(get_random(250, 180, 300))
                     moved_this_loop = True
 
                 if not client.buffed and (pots := client.get_item_locations(script.style)):
                     drinkBuff(client, script, pots)
                     moved_this_loop = True
 
-                x, y = mouse.position
+                x, y = pyautogui.position()
                 if client.rectangle.left < x < client.rectangle.right \
                         and client.rectangle.top < y < client.rectangle.bottom and moved_this_loop:
                     moveOffScreen(client, script)
@@ -98,16 +99,16 @@ def overload(client, script):
             NMZ(client, script)
 
         current_time = time.time()
-        script.strings['health'].set(f"{client.hp} hp | {round(flick_time_threshold - current_time)} secs until pray flick.")
+        script.strings['health'].set(
+            f"{client.hp} hp | {round(flick_time_threshold - current_time)} secs until pray flick.")
         script.strings['absorption'].set(f"{client.absorbs} | Drinking at {absorb_threshold}. ")
 
 
 def NMZ(client, script):
     # TODO improve workflow to appear more human
-    mouse = Controller()
     sleep_thresh_seed = (55, 35, 70)
-    flick_time_threshold = time.time() + getTRNV(*sleep_thresh_seed)
-    absorb_threshold = round(getTRNV(250, 180, 300))
+    flick_time_threshold = time.time() + get_random(*sleep_thresh_seed)
+    absorb_threshold = round(get_random(250, 180, 300))
     time.sleep(7)
     script.strings['status'].set(f'Active | {script.style}')
     script.post("Starting Script Now")
@@ -121,14 +122,14 @@ def NMZ(client, script):
         if client.hp > 1 and (rock := client.get_item_locations('(*)')):
             eatRockCake(client, script, rock)
             moved_this_loop = True
-            flick_time_threshold = time.time() + getTRNV(50, 30, 60)
+            flick_time_threshold = time.time() + get_random(50, 30, 60)
 
         current_time = time.time()
         script.strings['health'].set(
             f"{client.hp} hp | {round(flick_time_threshold-current_time)} secs until pray flick.")
         if time.time() >= flick_time_threshold:
             flickRapidHeal(client, script)
-            flick_time_threshold = time.time() + getTRNV(*sleep_thresh_seed)
+            flick_time_threshold = time.time() + get_random(*sleep_thresh_seed)
             if client.hp > 1 and (rock := client.get_item_locations('(*)')):
                 eatRockCake(client, script, rock)
             moved_this_loop = True
@@ -138,7 +139,7 @@ def NMZ(client, script):
             if (flick_time_threshold - time.time()) <= 30:
                 flickRapidHeal(client, script)
             drinkAbsorption(client, script, pots)
-            absorb_threshold = round(getTRNV(250, 180, 300))
+            absorb_threshold = round(get_random(250, 180, 300))
             moved_this_loop = True
 
         if not client.buffed and (pots := client.get_item_locations(script.style)):  # TODO: Add OCR for buff pot&random
@@ -147,7 +148,7 @@ def NMZ(client, script):
             drinkBuff(client, script, pots)
             moved_this_loop = True
 
-        x, y = mouse.position
+        x, y = pyautogui.position()
         if client.rectangle.left < x < client.rectangle.right \
                 and client.rectangle.top < y < client.rectangle.bottom and moved_this_loop:
             moveOffScreen(client, script)
@@ -193,7 +194,7 @@ def drinkBuff(client, script, buffs) -> None:  # Done
         script.post("Drinking buff pot.")
 
         # Move to tab
-        moveToTab(client, tabs.inventory)
+        moveToTab(client, script, tabs.inventory)
         time.sleep(getSleepTRNV(1))
 
         # Move to 1st buff pot
@@ -214,7 +215,7 @@ def drinkAbsorption(client, script, pots) -> None:  # Done
         script.post("Drinking absorption pot.")
 
         # Move to tab
-        moveToTab(client, tabs.inventory)
+        moveToTab(client, script, tabs.inventory)
         time.sleep(getSleepTRNV(.3))
 
         # Limits pots to click to 3
@@ -225,7 +226,7 @@ def drinkAbsorption(client, script, pots) -> None:  # Done
         for i in range(len(pots)):  # Moves to absorb
             script.mouse.moveMouse(pots[i])
             time.sleep(.3)
-            for _ in range(round(getTRNV(15, 13, 17))):  # Clicks absorb pot a psuedo random number of times.
+            for _ in range(round(get_random(15, 13, 17))):  # Clicks absorb pot a pseudo random number of times.
                 pyautogui.click()
                 time.sleep(getSleepTRNV(.05))
 
@@ -243,7 +244,7 @@ def flickRapidHeal(client, script) -> None:
             # Set rapid heal rect
             rect_coords = rects.rapid_heal.random_coord
             # Go to prayer tab if necessary
-            moveToTab(client, tabs.prayer)
+            moveToTab(client, script, tabs.prayer)
             time.sleep(getSleepTRNV(.15))
         else:
             # Set quick pray rect.
@@ -269,7 +270,7 @@ def eatRockCake(client, script, rock) -> None:  # Done
         script.post("Guzzling rock cake.")
 
         # Move to tab
-        moveToTab(client, tabs.inventory)
+        moveToTab(client, script, tabs.inventory)
         time.sleep(getSleepTRNV(.3))
 
         # Move to rock cake
@@ -282,7 +283,7 @@ def eatRockCake(client, script, rock) -> None:  # Done
 
         # Move mouse down relative to current location to reach "Guzzle" menu option
         x, y = pyautogui.position()
-        script.mouse.moveMouse((getTRNV(x, x - 5, x + 5), getTRNV(y + 41, y + 36, y + 46),))
+        script.mouse.moveMouse((get_random(x, x - 5, x + 5), get_random(y + 41, y + 36, y + 46),))
         time.sleep(getSleepTRNV(.2))
 
         # Click to finish guzzling rock cake
@@ -299,7 +300,7 @@ def logout(client, script) -> None:
 
     with script.lock:
         # Move to logout tab
-        moveToTab(client, tabs.logout)
+        moveToTab(client, script, tabs.logout)
         time.sleep(getSleepTRNV(.2))
 
         # Move mouse to logout button
@@ -324,7 +325,7 @@ def moveOffScreen(client, script) -> None:
         time.sleep(getSleepTRNV(.2))
 
 
-def moveToTab(client, _tab: tab) -> None:
+def moveToTab(client, script, _tab: tab) -> None:
     # TODO: Actually implement random chance to change using f-key (Runelite needs focus)
     f_key = ''
     if client.current_tab != _tab:  # If not already on the desired tab
@@ -376,49 +377,51 @@ def autoAlch(client, string_var, lock) -> None:
     pyautogui.press('f4')
     time.sleep(.5)
     # Set Clicking Rectangle
-    firstCoords = [client.getX(.8751545117), client.getY(.3464419476)]
-    secondCoords = [client.getX(.8936959209), client.getY(.3164794007)]
-    clickrectangle = firstCoords + secondCoords
+    first_coords = [client.getX(.8751545117), client.getY(.3464419476)]
+    second_coords = [client.getX(.8936959209), client.getY(.3164794007)]
+    click_rectangle = first_coords + second_coords
     # Set Smelter
-    smelterPOS = [round(client.rectangle.left + (client.client_width * .8294190358)),
-                  round(client.rectangle.bottom - (client.client_height * .3689138577))]
-    print(str(smelterPOS))
-    smelterColor = pyautogui.pixel(smelterPOS[0], smelterPOS[1])
-    print(str(smelterPOS) + " Mouse position")
-    print(str(smelterColor) + " Pixel color")
+    smelter_pos = [round(client.rectangle.left + (client.client_width * .8294190358)),
+                   round(client.rectangle.bottom - (client.client_height * .3689138577))]
+    print(str(smelter_pos))
+    smelter_color = pyautogui.pixel(smelter_pos[0], smelter_pos[1])
+    print(str(smelter_pos) + " Mouse position")
+    print(str(smelter_color) + " Pixel color")
     with lock:
         string_var.set("Auto-Alching")
     client.update()
-    randominterval = 1
-    quitCounter = 0
+    random_interval = 1
+    quit_counter = 0
     pyautogui.press('f4')
-    newx = random.normalvariate(((clickrectangle[2] - clickrectangle[0]) / 2) + clickrectangle[0], 1.848448998)
-    newy = random.normalvariate(((clickrectangle[3] - clickrectangle[1]) / 2) + clickrectangle[1], 1.599684449)
-    pyautogui.moveTo(newx, newy, 1, pyautogui.easeOutQuad)
-    pyautogui.click(interval=randominterval)
+    new_x = random.normalvariate(((click_rectangle[2] - click_rectangle[0]) / 2) + click_rectangle[0], 1.848448998)
+    new_y = random.normalvariate(((click_rectangle[3] - click_rectangle[1]) / 2) + click_rectangle[1], 1.599684449)
+    pyautogui.moveTo(new_x, new_y, 1, pyautogui.easeOutQuad)
+    pyautogui.click(interval=random_interval)
     pyautogui.press('f4')
     print("Starting auto alch")
     while True:
         if keyboard.is_pressed('esc'):
             break
-        if pyautogui.pixelMatchesColor(smelterPOS[0], smelterPOS[1], smelterColor, tolerance=2):
-            quitCounter = 0
-        elif (quitCounter > 10):
+        if pyautogui.pixelMatchesColor(smelter_pos[0], smelter_pos[1], smelter_color, tolerance=2):
+            quit_counter = 0
+        elif quit_counter > 10:
             break
         if random.randrange(1, 6) == 1:
-            newx = random.normalvariate(((clickrectangle[2] - clickrectangle[0]) / 2) + clickrectangle[0], 1.848448998)
-            newy = random.normalvariate(((clickrectangle[3] - clickrectangle[1]) / 2) + clickrectangle[1], 1.599684449)
-            print("{} , {}".format(newx, newy))
-            pyautogui.moveTo(newx, newy, 1, pyautogui.easeOutQuad)
+            new_x = random.normalvariate(
+                ((click_rectangle[2] - click_rectangle[0]) / 2) + click_rectangle[0], 1.848448998)
+            new_y = random.normalvariate(
+                ((click_rectangle[3] - click_rectangle[1]) / 2) + click_rectangle[1], 1.599684449)
+            print("{} , {}".format(new_x, new_y))
+            pyautogui.moveTo(new_x, new_y, 1, pyautogui.easeOutQuad)
             print("Adjusting click location.")
         if random.randrange(1, 10) == 1:
-            randominterval = random.uniform(0.8, 1.2)
+            random_interval = random.uniform(0.8, 1.2)
             print("Adjusting click interval.")
 
-        quitCounter = quitCounter + 1
+        quit_counter = quit_counter + 1
 
-        pyautogui.click(interval=randominterval)
-        if pyautogui.pixelMatchesColor(smelterPOS[0], smelterPOS[1], smelterColor, tolerance=2):
-            quitCounter = 0
+        pyautogui.click(interval=random_interval)
+        if pyautogui.pixelMatchesColor(smelter_pos[0], smelter_pos[1], smelter_color, tolerance=2):
+            quit_counter = 0
     with lock:
         string_var.set("Auto-Alching stopped.")

@@ -1,5 +1,5 @@
 # Pixel checking coords
-class coords():
+class coords:
     item_tab_check = 635, 200
     prayer_tab_check = 705, 200
     inv_slot1_1 = 582, 267
@@ -11,7 +11,7 @@ class coords():
 
 
 # Colors
-class colors():
+class colors:
     tab_selected = 117, 40, 30
     user_box_is_present = 21, 20, 19
     health_is_present = 255, 6, 0

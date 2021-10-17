@@ -1,20 +1,12 @@
 import random
 
 
-def getTRNV(mean: float, lower: float, upper: float) -> float:
-    result = False
-    # print(f"Mean: {mean}, Upper = {upper}, lower ={lower}")
-    while result < lower or result > upper:
-        result = random.normalvariate(mean, (upper-lower) / 4)
-    return result
-
-
 class tab:
-    def __init__(self, name: str, top_left: tuple, bottom_right: tuple, f_key=''):
-        self.name = name
-        self.selected = bool
-        self.rect = rectangle(top_left, bottom_right)
-        self.f_key = f_key
+    def __init__(self, name: str, top_left: tuple, bottom_right: tuple, f_key: str = ''):
+        self.name: str = name
+        self.selected: bool
+        self.rect: rectangle = rectangle(top_left, bottom_right)
+        self.f_key: str = f_key
 
 
 class rectangle:
@@ -52,15 +44,23 @@ class rectangle:
 
     @property
     def center_coord(self) -> tuple:
+        """Returns the coordinate at the dead center of the rectangle."""
         return ((self.left + self.right) / 2), ((self.top + self.bottom) / 2),
 
     @property
     def random_coord(self) -> tuple:
-        """Returns a normally distributed random coordinate within the rectangle box."""
+        """Returns a normally distributed random coordinate truncated so it is within the rectangle box."""
         mean_x = (self.right + self.left) / 2
         mean_y = (self.top + self.bottom) / 2
-        x = getTRNV(mean_x, self.left, self.right)
-        y = getTRNV(mean_y, self.top, self.bottom)
+        x = False
+        y = False
+
+        while x < self.left or x > self.right:
+            x = random.normalvariate(mean_x, (self.right - self.left) / 4)
+
+        while y < self.top or y > self.bottom:
+            y = random.normalvariate(mean_y, (self.bottom - self.top) / 4)
+
         return x, y
 
 

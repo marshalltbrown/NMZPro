@@ -36,16 +36,16 @@ def reader(client, script):
         # If in overload mode, absorptions are on the box to the left
         if script.style == 'O':
             if verifyOverload(client, img):
-                read_nmz_pot(client, script, ocr, right_pot_region)
+                read_nmz_pot(client, ocr, right_pot_region)
             else:
-                read_nmz_pot(client, script, ocr, left_pot_region)
+                read_nmz_pot(client, ocr, left_pot_region)
 
         else:  # If in regular mode, absorptions are on the left
             readBuffPot(client, script, img)
-            read_nmz_pot(client, script, ocr, left_pot_region)
+            read_nmz_pot(client, ocr, left_pot_region)
 
         # OCR health
-        readHealth(client, script, ocr)
+        readHealth(client, ocr)
 
         # If mouse is not in the inventory grid then read the inventory
         x, y = mouse.position
@@ -160,7 +160,7 @@ def process_image(img, resize=False):
     return img
 
 
-def read_nmz_pot(client, script, ocr, pot_region):
+def read_nmz_pot(client, ocr, pot_region):
     # Get screenshot from region
     img = pyautogui.screenshot(region=pot_region)
     # Prep image for OCR
@@ -177,7 +177,7 @@ def read_nmz_pot(client, script, ocr, pot_region):
         client.inNMZ = False
 
 
-def readHealth(client, script, ocr):
+def readHealth(client, ocr):
     left = 524 + client.rectangle.left
     top = 82 + client.rectangle.top
     # Params are ( left, top, width, height )
@@ -200,4 +200,3 @@ def readHealth(client, script, ocr):
     if ocr_hp:
         ocr_hp = ocr_hp[0]
         client.hp = int(ocr_hp)
-
