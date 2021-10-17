@@ -1,3 +1,5 @@
+from utilities.utils import WindMouse
+from utilities.vars import settings
 
 
 class admin:
@@ -9,6 +11,7 @@ class admin:
         self.strings = strings
         self.lock = lock
         self.inv_strings = inventory_strings
+        self.mouse = WindMouse(settings)
 
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -28,8 +31,6 @@ class admin:
                             'eating': False
                             }
 
-        # for key, value in self.__dict__.items():
-        #     print(f"K: {key}, V: {value}")
     def check_moving_soon(self):
         result = False
         if True in self.moving_soon.values():

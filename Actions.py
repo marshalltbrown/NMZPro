@@ -31,7 +31,7 @@ def overload(client, script):
                     eatRockCake(client, script, rock)
 
                 moveToTab(client, tabs.prayer)
-                moveMouse(rects.melee_prayer.random_coord)
+                script.mouse.moveMouse(rects.melee_prayer.random_coord)
 
                 while overload_expiry_timer - time.time() >= 2:
                     script.strings['buff'].set(f"Overload ends in {round(overload_expiry_timer - time.time())}")
@@ -40,7 +40,7 @@ def overload(client, script):
                 pyautogui.click()
 
                 moveToTab(client, tabs.inventory)
-                moveMouse(o_pot[0])
+                script.mouse.moveMouse(o_pot[0])
                 while client.overloaded:
                     time.sleep(.0001)
 
@@ -50,7 +50,7 @@ def overload(client, script):
                 time.sleep(getSleepTRNV(5))
 
                 moveToTab(client, tabs.prayer)
-                moveMouse(rects.melee_prayer.random_coord)
+                script.mouse.moveMouse(rects.melee_prayer.random_coord)
                 pyautogui.click()
                 flick_time_threshold = time.time() + getTRNV(*sleep_thresh_seed)
 
@@ -197,7 +197,7 @@ def drinkBuff(client, script, buffs) -> None:  # Done
         time.sleep(getSleepTRNV(1))
 
         # Move to 1st buff pot
-        moveMouse(buffs[0])
+        script.mouse.moveMouse(buffs[0])
         time.sleep(getSleepTRNV(.5))
 
         # Click buff pot
@@ -223,7 +223,7 @@ def drinkAbsorption(client, script, pots) -> None:  # Done
 
         # Loop to move to first 3 absorbs and drink each of them
         for i in range(len(pots)):  # Moves to absorb
-            moveMouse(pots[i])
+            script.mouse.moveMouse(pots[i])
             time.sleep(.3)
             for _ in range(round(getTRNV(15, 13, 17))):  # Clicks absorb pot a psuedo random number of times.
                 pyautogui.click()
@@ -252,7 +252,7 @@ def flickRapidHeal(client, script) -> None:
         script.post("Flicking rapid heal now.")
 
         # Move to prayer location. ( Either quick pray or actual rapid heal )
-        moveMouse(rect_coords)
+        script.mouse.moveMouse(rect_coords)
         time.sleep(getSleepTRNV(.15))
 
         # Flick ( Double click) prayer location. ( Either quick pray or actual rapid heal )
@@ -273,7 +273,7 @@ def eatRockCake(client, script, rock) -> None:  # Done
         time.sleep(getSleepTRNV(.3))
 
         # Move to rock cake
-        moveMouse(rock[0])
+        script.mouse.moveMouse(rock[0])
         time.sleep(getSleepTRNV(.1))
 
         # Right click to bring up guzzle menu
@@ -282,7 +282,7 @@ def eatRockCake(client, script, rock) -> None:  # Done
 
         # Move mouse down relative to current location to reach "Guzzle" menu option
         x, y = pyautogui.position()
-        moveMouse((getTRNV(x, x - 5, x + 5), getTRNV(y + 41, y + 36, y + 46),))
+        script.mouse.moveMouse((getTRNV(x, x - 5, x + 5), getTRNV(y + 41, y + 36, y + 46),))
         time.sleep(getSleepTRNV(.2))
 
         # Click to finish guzzling rock cake
@@ -303,7 +303,7 @@ def logout(client, script) -> None:
         time.sleep(getSleepTRNV(.2))
 
         # Move mouse to logout button
-        moveMouse(rects.logout.random_coord)
+        script.mouse.moveMouse(rects.logout.random_coord)
         time.sleep(getSleepTRNV(.1))
 
         # Click logout button TODO: See if a double click is needed here
@@ -316,7 +316,7 @@ def logout(client, script) -> None:
 def moveOffScreen(client, script) -> None:
     with script.lock:
         # Moves the mouse just off the right side of the Runelite client
-        moveMouse((client.rectangle.right + 10, client.rectangle.top + getSleepTRNV(300),))
+        script.mouse.moveMouse((client.rectangle.right + 10, client.rectangle.top + getSleepTRNV(300),))
         time.sleep(getSleepTRNV(.3))
 
         # Click off screen to be sure Runelite loses window focus
@@ -335,7 +335,7 @@ def moveToTab(client, _tab: tab) -> None:
             time.sleep(getSleepTRNV(.27))
         else:  # Currently always falls to this
             # Move to tab change region
-            moveMouse(rect.random_coord)
+            script.mouse.moveMouse(rect.random_coord)
             time.sleep(getSleepTRNV(.08))
 
             # Clicks the tab to finish changing tabs
@@ -355,12 +355,12 @@ def login(client, script) -> None:  # Takes control of the mouse and keyboard to
     # If on "existing user" screen, click the box to enter login page
     if pixelMatchesColor(current_color, colors.user_box_is_present, tolerance=10):
         script.post("Clicking \"Existing user\" box.")
-        moveMouse(rects.existing_user.random_coord)
+        script.mouse.moveMouse(rects.existing_user.random_coord)
         time.sleep(getSleepTRNV(.4))
         pyautogui.click()
         time.sleep(getSleepTRNV(1))
 
-    moveMouse(rects.password_input.random_coord)
+    script.mouse.moveMouse(rects.password_input.random_coord)
     time.sleep(getSleepTRNV(.2))
     pyautogui.click()
     time.sleep(getSleepTRNV(.2))
