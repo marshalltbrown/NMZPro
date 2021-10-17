@@ -1,9 +1,10 @@
 import random
 import time
 from math import floor, sqrt
-
+import numpy as np
 from pynput.mouse import Controller
 from utilities.vars import settings
+from scipy.special import comb
 
 
 def getTRNV(mean: float, lower: float, upper: float) -> float:
@@ -22,38 +23,41 @@ def getSleepTRNV(mean: float or int):
     return result
 
 
-def moveMouse(end_coords: tuple):
+def bernstein_poly(i, n, t):
+    """
+     The Bernstein polynomial of n, i as a function of t
+    """
+
+    return comb(n, i) * (t**(n-i)) * (1 - t)**i
+
+
+def moveMouse(end_coords: tuple) -> None:
     my_mouse = WindMouse(settings)
     mouse = Controller()
 
     start_x, start_y = mouse.position
     end_x, end_y = end_coords
 
-    points = my_mouse.GeneratePoints(start_x, start_y, end_x, end_y)
+    movement_path = my_mouse.GeneratePoints(start_x, start_y, end_x, end_y)
+    movement_delays = generate_mouse_movement_sleep_array(len(movement_path))
 
-    if len(points) <= 20:
-        for i in range(len(points)):
-            mouse.move(points[i][0] - mouse.position[0], points[i][1] - mouse.position[1])
-            time.sleep(getSleepTRNV(.035))
-    else:
-        half_point = getTRNV(len(points) * .5, len(points) * .46, len(points) * .54)
-        quarter_point = getTRNV(len(points) * .75, len(points) * .73, len(points) * .77)
-        eight_point = getTRNV(len(points) * .925, len(points) * .915, len(points) * .935)
-        fifteenth_point = getTRNV(len(points) * .9667, len(points) * .964, len(points) * .983)
-
-        for i in range(len(points)):
-            mouse.move(points[i][0] - mouse.position[0], points[i][1] - mouse.position[1])
-            if i <= half_point:
-                time.sleep(getSleepTRNV(.01))
-            elif i <= quarter_point:
-                time.sleep(getSleepTRNV(.015))
-            elif i <= eight_point:
-                time.sleep(getSleepTRNV(.031))
-            elif i <= fifteenth_point:
-                time.sleep(getSleepTRNV(.041))
+    for i in range(len(movement_path)):
+        new_x, new_y, z = movement_path[i]
+        old_x, old_y = mouse.position
+        mouse.move(new_x - old_x, new_y - old_y)
+        time.sleep(movement_delays[i])
 
 
-def itemCheck(colors: list, sample, tolerance: int):
+def generate_mouse_movement_sleep_array(number_of_points: int) -> [float]:
+    curve_points = [.01, .01, .041]  # This defines the curve distribution of the array
+    t = np.linspace(0.0, 1.0, number_of_points)
+    polynomial_array = np.array([bernstein_poly(i, len(curve_points) - 1, t) for i in range(0, len(curve_points))])
+    sleep_array = reversed(np.dot(np.array(curve_points), polynomial_array))
+    sleep_array = [float(i) for i in sleep_array]
+    return sleep_array
+
+
+def itemCheck(colors: list, sample, tolerance: int) -> int:
     counter = 0
     if pixelMatchesColor(colors[0], sample, tolerance=tolerance):
         counter += 1
