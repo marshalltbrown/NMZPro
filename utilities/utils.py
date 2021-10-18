@@ -91,7 +91,7 @@ class WindMouse:
 
         for i in range(len(movement_path)):
             new_x, new_y = movement_path[i]
-            pyautogui.moveTo(new_x, new_y)
+            pyautogui.moveTo(new_x, new_y, _pause=False)
             time.sleep(movement_delays[i])
 
     def generate_mouse_movement_sleep_array(self, number_of_points: int) -> [float]:

@@ -4,6 +4,8 @@ import cv2
 import numpy as np
 from easyocr import Reader
 from PIL import Image
+
+from utilities.object_templates import tab
 from utilities.utils import pixelMatchesColor, itemCheck
 from utilities.vars import colors, coords
 from Runelite import tabs, runelite
@@ -28,7 +30,7 @@ def reader(client, script):
         img = pyautogui.screenshot(region=runelite_region)
 
         # Reads between 3 useful tabs to see which is active
-        readTab(client, script, img)
+        readTab(client, img)
 
         # If in overload mode, absorptions are on the box to the left
         if script.style == 'O':
@@ -38,7 +40,7 @@ def reader(client, script):
                 read_nmz_pot(client, ocr, left_pot_region)
 
         else:  # If in regular mode, absorptions are on the left
-            readBuffPot(client, script, img)
+            readBuffPot(client, img)
             read_nmz_pot(client, ocr, left_pot_region)
 
         # OCR health
@@ -48,9 +50,10 @@ def reader(client, script):
         x, y = pyautogui.position()
         rect = client.rectangle
         if not (rect.left+750 > x > rect.left+560) or not (rect.bottom > y > rect.top+207):
-            readInventory(client, script, img)
+            readInventory(client, img)
 
         time.sleep(.3)
+        script.gui.refresh_inventory(client)
 
 
 def verifyOverload(client, img) -> bool:
@@ -66,7 +69,7 @@ def verifyOverload(client, img) -> bool:
     return result
 
 
-def readInventory(client, script, img):
+def readInventory(client, img):
     if client.current_tab == tabs.inventory:
         one_dose = coords.inv_slot1_1[1]
         for row in range(7):
@@ -96,7 +99,6 @@ def readInventory(client, script, img):
                     update_pot_in_inv(client, row, column, '?')
                 x += 42
             one_dose += 36
-    script.gui.refresh_inventory(client)
 
 
 def update_pot_in_inv(client: runelite, row, column, contents, doses=0):
@@ -104,22 +106,19 @@ def update_pot_in_inv(client: runelite, row, column, contents, doses=0):
     client.inventory[row][column].pot_doses = doses
 
 
-def readTab(client, script, img):
+def readTab(client, img):
     item_tab_color = img.getpixel(coords.item_tab_check)
     prayer_tab_color = img.getpixel(coords.prayer_tab_check)
 
     if pixelMatchesColor(item_tab_color, colors.tab_selected, tolerance=10):
         client.current_tab = tabs.inventory
-        script.gui.tab.set('On items tab.')
     elif pixelMatchesColor(prayer_tab_color, colors.tab_selected, tolerance=10):
         client.current_tab = tabs.prayer
-        script.gui.tab.set('On prayer tab.')
     else:
-        client.current_tab = None
-        script.gui.tab.set('On unknown tab.')
+        client.current_tab = tab((0, 0,), (2, 2,))
 
 
-def readBuffPot(client, script, img):
+def readBuffPot(client, img):
     # Checks if buff is in double digits still
     current_pixel = 123
     previous_color = 0
@@ -133,13 +132,10 @@ def readBuffPot(client, script, img):
         current_pixel += 1
     # TODO: some sort of method to limit false returns while client is moved.
     if green_lines == 2:
-        script.gui.buff.set('>=10 remaining')
         client.buffed = True
     elif green_lines == 1:
-        script.gui.buff.set('<=9 remaining')
         client.buffed = False
     else:
-        script.gui.buff.set('???')
         client.buffed = False
 
 

@@ -2,7 +2,7 @@ import random
 
 
 class tab:
-    def __init__(self, name: str, top_left: tuple, bottom_right: tuple, f_key: str = ''):
+    def __init__(self, top_left: tuple, bottom_right: tuple, name: str = "Unknown", f_key: str = ''):
         self.name: str = name
         self.selected: bool
         self.rect: rectangle = rectangle(top_left, bottom_right)

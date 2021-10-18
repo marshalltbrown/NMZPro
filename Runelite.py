@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Union
 from pywinauto.application import Application
 from utilities.object_templates import rectangle, tab, inv_slot
 
@@ -11,11 +11,11 @@ class runelite:
         self.offset: tuple = (self.rectangle.left, self.rectangle.top,)
 
         # Vars
-        self.current_tab: Optional[tab] = None
+        self.current_tab: Union[tab, None] = tab((0, 0,), (2, 2,))
         self.buffed: bool = True
         self.absorbs: int = 0
-        self.hp: int = 1
-        self.inNMZ: bool = True
+        self.hp: int = 99
+        self.inNMZ: bool = False
         self.overloaded: bool = False
 
         # Initializations & offsets
@@ -49,7 +49,6 @@ class runelite:
             self.rectangle = rectangle(top_left, bottom_right)
             # Updates client.offset
             self.offset = top_left
-
             # Updates vars and data class
             rectangle.offset = top_left
 
@@ -61,10 +60,10 @@ class runelite:
 
 
 class tabs:
-    inventory = tab('Inventory', (632, 196,), (658, 229,))
-    prayer = tab('Prayer', (698, 196,), (724, 229,))
-    magic = tab('Magic', (749, 196,), (784, 229,))
-    logout = tab('Logout', (634, 497,), (660, 523,))
+    inventory = tab((632, 196,), (658, 229,), name='Inventory')
+    prayer = tab((698, 196,), (724, 229,), name='Prayer')
+    magic = tab((749, 196,), (784, 229,), name='Magic')
+    logout = tab((634, 497,), (660, 523,), name='Logout')
 
 
 class rects:

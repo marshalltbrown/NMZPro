@@ -43,6 +43,11 @@ class gui:
             box.see("end")
 
     def refresh_inventory(self, client: runelite) -> None:
+
+        self.buff = str(client.buffed)
+
+        self.tab = client.current_tab.name
+
         for row in range(7):
             for column in range(4):
                 contents = client.inventory[row][column].contents

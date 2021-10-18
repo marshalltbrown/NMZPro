@@ -175,7 +175,7 @@ def nmz_check(client, script) -> bool:
                 script.end_time = time.time()
                 elapsed_time_string = time.strftime("%H:%M:%S", time.gmtime(script.end_time - script.start_time))
                 script.gui.post(f"Total runtime: {elapsed_time_string}")
-                script.gui.post("Logged out & aLl threads have been terminated.")
+                script.gui.post("Logged out & All threads have been terminated.")
                 return False
             if timer == 2:
                 script.gui.post('NMZ Not Found | Pausing script')
@@ -226,6 +226,7 @@ def drinkAbsorption(client, script, pots) -> None:  # Done
             script.mouse.moveMouse(pots[i])
             time.sleep(.3)
             for _ in range(round(get_random(15, 13, 17))):  # Clicks absorb pot a pseudo random number of times.
+                pyautogui.PAUSE = False
                 pyautogui.click()
                 time.sleep(getSleepTRNV(.05))
 
