@@ -70,3 +70,4 @@ class inv_slot:
         self.br: tuple = bottom_right
         self.rect: rectangle = rectangle(self.tl, self.br)
         self.contents: str = '?'
+        self.pot_doses: int(0-4) = 0

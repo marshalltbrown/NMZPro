@@ -4,15 +4,12 @@ import cv2
 import numpy as np
 from easyocr import Reader
 from PIL import Image
-from pynput.mouse import Controller
-
 from utilities.utils import pixelMatchesColor, itemCheck
 from utilities.vars import colors, coords
-from Runelite import tabs
+from Runelite import tabs, runelite
 
 
 def reader(client, script):
-    mouse = Controller()
     ocr = Reader(['en'], gpu=True)
 
     print("Reader and dependencies initialized.")
@@ -48,10 +45,10 @@ def reader(client, script):
         readHealth(client, ocr)
 
         # If mouse is not in the inventory grid then read the inventory
-        x, y = mouse.position
+        x, y = pyautogui.position()
         rect = client.rectangle
         if not (rect.left+750 > x > rect.left+560) or not (rect.bottom > y > rect.top+207):
-            readInventory(client, script.inv_strings, img)
+            readInventory(client, script, img)
 
         time.sleep(.3)
 
@@ -69,7 +66,7 @@ def verifyOverload(client, img) -> bool:
     return result
 
 
-def readInventory(client, inv_strings, img):
+def readInventory(client, script, img):
     if client.current_tab == tabs.inventory:
         one_dose = coords.inv_slot1_1[1]
         for row in range(7):
@@ -82,31 +79,29 @@ def readInventory(client, inv_strings, img):
                     img.getpixel((x, one_dose - 12,))
                 ]
                 if itemCheck(colors.array, colors.dwarven_rock, 10) == 4:
-                    update_pot_in_inv(client, inv_strings, row, column, '(*)')
+                    update_pot_in_inv(client, row, column, '(*)')
                 elif (itemCheck(colors.array, colors.empty_potion, 8)) == 4:
-                    update_pot_in_inv(client, inv_strings, row, column, 'X')
+                    update_pot_in_inv(client, row, column, 'X')
                 elif (result := itemCheck(colors.array, colors.range_potion, 30)) != 0:
-                    update_pot_in_inv(client, inv_strings, row, column, "R", dose=result)
+                    update_pot_in_inv(client, row, column, "R", doses=result)
                 elif (result := itemCheck(colors.array, colors.absorption_pot, 15)) != 0:
-                    update_pot_in_inv(client, inv_strings, row, column, "A", dose=result)
+                    update_pot_in_inv(client, row, column, "A", doses=result)
                 elif (result := itemCheck(colors.array, colors.strength_pot, 15)) != 0:
-                    update_pot_in_inv(client, inv_strings, row, column, "S", dose=result)
+                    update_pot_in_inv(client, row, column, "S", doses=result)
                 elif (result := itemCheck(colors.array, colors.overload_pot, 10)) != 0:
-                    update_pot_in_inv(client, inv_strings, row, column, "O", dose=result)
+                    update_pot_in_inv(client, row, column, "O", doses=result)
                 elif (itemCheck(colors.array, colors.inv_empty, 15)) == 4:
-                    update_pot_in_inv(client, inv_strings, row, column, '-')
+                    update_pot_in_inv(client, row, column, '-')
                 else:
-                    update_pot_in_inv(client, inv_strings, row, column, '?')
+                    update_pot_in_inv(client, row, column, '?')
                 x += 42
             one_dose += 36
+    script.gui.refresh_inventory(client)
 
 
-def update_pot_in_inv(client, inv_strings, row, column, contents, dose=0):
-    if dose == 0:
-        inv_strings[row][column].set(contents)
-    else:
-        inv_strings[row][column].set(f"{contents}{dose}")
+def update_pot_in_inv(client: runelite, row, column, contents, doses=0):
     client.inventory[row][column].contents = contents
+    client.inventory[row][column].pot_doses = doses
 
 
 def readTab(client, script, img):
@@ -115,13 +110,13 @@ def readTab(client, script, img):
 
     if pixelMatchesColor(item_tab_color, colors.tab_selected, tolerance=10):
         client.current_tab = tabs.inventory
-        script.strings['inventory'].set('On items tab.')
+        script.gui.tab.set('On items tab.')
     elif pixelMatchesColor(prayer_tab_color, colors.tab_selected, tolerance=10):
         client.current_tab = tabs.prayer
-        script.strings['inventory'].set('On prayer tab.')
+        script.gui.tab.set('On prayer tab.')
     else:
         client.current_tab = None
-        script.strings['inventory'].set('On unknown tab.')
+        script.gui.tab.set('On unknown tab.')
 
 
 def readBuffPot(client, script, img):
@@ -138,13 +133,13 @@ def readBuffPot(client, script, img):
         current_pixel += 1
     # TODO: some sort of method to limit false returns while client is moved.
     if green_lines == 2:
-        script.strings['buff'].set('>=10 remaining')
+        script.gui.buff.set('>=10 remaining')
         client.buffed = True
     elif green_lines == 1:
-        script.strings['buff'].set('<=9 remaining')
+        script.gui.buff.set('<=9 remaining')
         client.buffed = False
     else:
-        script.strings['buff'].set('???')
+        script.gui.buff.set('???')
         client.buffed = False
 
 

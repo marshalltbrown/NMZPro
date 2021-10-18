@@ -14,14 +14,13 @@ def overload(client, script):
     absorb_threshold = round(get_random(250, 180, 300))
     overload_expiry_timer = 999999999999
     time.sleep(7)
-    script.strings['status'].set('Active')
-    script.post("Starting Script Now")
+    script.gui.status.set('Active')
+    script.gui.post("Starting Script Now")
     while script.active:
         if client.overloaded:
-            script.strings['buff'].set(f"Overload ends in {round(overload_expiry_timer - time.time())}")
+            script.gui.buff.set(f"Overload ends in {round(overload_expiry_timer - time.time())}")
 
             if overload_expiry_timer - time.time() <= 30 and (o_pot := client.get_item_locations('O')):
-                print("im in here bro")
                 flickRapidHeal(client, script)
 
                 if client.absorbs <= 200 and (pots := client.get_item_locations('A')):
@@ -35,7 +34,7 @@ def overload(client, script):
                 script.mouse.moveMouse(rects.melee_prayer.random_coord)
 
                 while overload_expiry_timer - time.time() >= 2:
-                    script.strings['buff'].set(f"Overload ends in {round(overload_expiry_timer - time.time())}")
+                    script.gui.buff.set(f"Overload ends in {round(overload_expiry_timer - time.time())}")
                     time.sleep(.1)
 
                 pyautogui.click()
@@ -68,14 +67,14 @@ def overload(client, script):
                         flick_time_threshold = time.time() + get_random(*sleep_thresh_seed)
 
                 current_time = time.time()
-                script.strings['health'].set(
+                script.gui.hp.set(
                     f"{client.hp} hp | {round(flick_time_threshold - current_time)} secs until pray flick.")
                 if time.time() >= flick_time_threshold:
                     flickRapidHeal(client, script)
                     flick_time_threshold = time.time() + get_random(*sleep_thresh_seed)
                     moved_this_loop = True
 
-                script.strings['absorption'].set(f"{client.absorbs} | Drinking at {absorb_threshold}. ")
+                script.gui.absorbs.set(f"{client.absorbs} | Drinking at {absorb_threshold}. ")
                 if client.absorbs <= absorb_threshold and (pots := client.get_item_locations('A')):
                     drinkAbsorption(client, script, pots)
                     absorb_threshold = round(get_random(250, 180, 300))
@@ -92,16 +91,16 @@ def overload(client, script):
 
         elif client.get_item_locations('O'):
             while not client.overloaded:
-                script.strings['buff'].set('Waiting on overload')
+                script.gui.buff.set('Waiting on overload')
             overload_expiry_timer = time.time() + 300
             time.sleep(5.5)
         else:
             NMZ(client, script)
 
         current_time = time.time()
-        script.strings['health'].set(
+        script.gui.hp.set(
             f"{client.hp} hp | {round(flick_time_threshold - current_time)} secs until pray flick.")
-        script.strings['absorption'].set(f"{client.absorbs} | Drinking at {absorb_threshold}. ")
+        script.gui.absorbs.set(f"{client.absorbs} | Drinking at {absorb_threshold}. ")
 
 
 def NMZ(client, script):
@@ -110,8 +109,8 @@ def NMZ(client, script):
     flick_time_threshold = time.time() + get_random(*sleep_thresh_seed)
     absorb_threshold = round(get_random(250, 180, 300))
     time.sleep(7)
-    script.strings['status'].set(f'Active | {script.style}')
-    script.post("Starting Script Now")
+    script.gui.status.set(f'Active | {script.style}')
+    script.gui.post("Starting Script Now")
     script.start_time = time.time()
     while script.active:
         # If the client does not have absorbs active, logout, end script, and break the loop.
@@ -125,7 +124,7 @@ def NMZ(client, script):
             flick_time_threshold = time.time() + get_random(50, 30, 60)
 
         current_time = time.time()
-        script.strings['health'].set(
+        script.gui.hp.set(
             f"{client.hp} hp | {round(flick_time_threshold-current_time)} secs until pray flick.")
         if time.time() >= flick_time_threshold:
             flickRapidHeal(client, script)
@@ -134,7 +133,7 @@ def NMZ(client, script):
                 eatRockCake(client, script, rock)
             moved_this_loop = True
 
-        script.strings['absorption'].set(f"{client.absorbs} | Drinking at {absorb_threshold}. ")
+        script.gui.absorbs.set(f"{client.absorbs} | Drinking at {absorb_threshold}. ")
         if client.absorbs <= absorb_threshold and (pots := client.get_item_locations('A')):
             if (flick_time_threshold - time.time()) <= 30:
                 flickRapidHeal(client, script)
@@ -164,23 +163,23 @@ def nmz_check(client, script) -> bool:
         exit_timer = 25
         while timer <= exit_timer:
             if client.inNMZ:
-                script.post('NMZ Found | Resuming script')
-                script.strings['status'].set(f'Active | {script.style}')
+                script.gui.post('NMZ Found | Resuming script')
+                script.gui.status.set(f'Active | {script.style}')
                 return True
             if timer == exit_timer:
                 script.active = False
-                script.post("Exit timer limit reached | Logging out")
-                script.strings['status'].set('Program complete')
+                script.gui.post("Exit timer limit reached | Logging out")
+                script.gui.status.set('Program complete')
                 time.sleep(getSleepTRNV(10))
                 logout(client, script)
                 script.end_time = time.time()
                 elapsed_time_string = time.strftime("%H:%M:%S", time.gmtime(script.end_time - script.start_time))
-                script.post(f"Total runtime: {elapsed_time_string}")
-                script.post("Logged out & aLl threads have been terminated.")
+                script.gui.post(f"Total runtime: {elapsed_time_string}")
+                script.gui.post("Logged out & aLl threads have been terminated.")
                 return False
             if timer == 2:
-                script.post('NMZ Not Found | Pausing script')
-            script.strings['status'].set(f"{timer} / {exit_timer} Seconds until logout.")
+                script.gui.post('NMZ Not Found | Pausing script')
+            script.gui.status.set(f"{timer} / {exit_timer} Seconds until logout.")
             time.sleep(1)
             timer += 1
     else:
@@ -191,7 +190,7 @@ def drinkBuff(client, script, buffs) -> None:  # Done
 
     with script.lock:
 
-        script.post("Drinking buff pot.")
+        script.gui.post("Drinking buff pot.")
 
         # Move to tab
         moveToTab(client, script, tabs.inventory)
@@ -205,14 +204,14 @@ def drinkBuff(client, script, buffs) -> None:  # Done
         pyautogui.click()
         time.sleep(getSleepTRNV(.1))
 
-        script.post("Buff pot drank.")
+        script.gui.post("Buff pot drank.")
 
 
 def drinkAbsorption(client, script, pots) -> None:  # Done
 
     with script.lock:
 
-        script.post("Drinking absorption pot.")
+        script.gui.post("Drinking absorption pot.")
 
         # Move to tab
         moveToTab(client, script, tabs.inventory)
@@ -230,7 +229,7 @@ def drinkAbsorption(client, script, pots) -> None:  # Done
                 pyautogui.click()
                 time.sleep(getSleepTRNV(.05))
 
-        script.post("Absorb pot drank.")
+        script.gui.post("Absorb pot drank.")
 
         time.sleep(getSleepTRNV(.1))
 
@@ -240,7 +239,7 @@ def flickRapidHeal(client, script) -> None:
 
         # Small chance to go directly to prayer tab
         if random.randrange(1, 10) == 1:
-            script.post("Moving to prayer tab to flick. (1/10 odds)")
+            script.gui.post("Moving to prayer tab to flick. (1/10 odds)")
             # Set rapid heal rect
             rect_coords = rects.rapid_heal.random_coord
             # Go to prayer tab if necessary
@@ -250,7 +249,7 @@ def flickRapidHeal(client, script) -> None:
             # Set quick pray rect.
             rect_coords = rects.quick_pray.random_coord
 
-        script.post("Flicking rapid heal now.")
+        script.gui.post("Flicking rapid heal now.")
 
         # Move to prayer location. ( Either quick pray or actual rapid heal )
         script.mouse.moveMouse(rect_coords)
@@ -267,7 +266,7 @@ def eatRockCake(client, script, rock) -> None:  # Done
 
     with script.lock:
 
-        script.post("Guzzling rock cake.")
+        script.gui.post("Guzzling rock cake.")
 
         # Move to tab
         moveToTab(client, script, tabs.inventory)
@@ -296,7 +295,7 @@ def logout(client, script) -> None:
     # Simply wait to look a bit more human
     time.sleep(getSleepTRNV(20))
 
-    script.post("Logging out.")
+    script.gui.post("Logging out.")
 
     with script.lock:
         # Move to logout tab
@@ -345,7 +344,7 @@ def moveToTab(client, script, _tab: tab) -> None:
 
 
 def login(client, script) -> None:  # Takes control of the mouse and keyboard to login to Runelite.
-    script.post('Beginning login script.')
+    script.gui.post('Beginning login script.')
 
     # Set Runelite screenshot rect
     rect = client.rectangle
@@ -355,7 +354,7 @@ def login(client, script) -> None:  # Takes control of the mouse and keyboard to
 
     # If on "existing user" screen, click the box to enter login page
     if pixelMatchesColor(current_color, colors.user_box_is_present, tolerance=10):
-        script.post("Clicking \"Existing user\" box.")
+        script.gui.post("Clicking \"Existing user\" box.")
         script.mouse.moveMouse(rects.existing_user.random_coord)
         time.sleep(getSleepTRNV(.4))
         pyautogui.click()
@@ -365,10 +364,10 @@ def login(client, script) -> None:  # Takes control of the mouse and keyboard to
     time.sleep(getSleepTRNV(.2))
     pyautogui.click()
     time.sleep(getSleepTRNV(.2))
-    script.post('Typing saved password.')
+    script.gui.post('Typing saved password.')
     with open('assets/password.txt', 'r') as reader:
         keyboard.write(reader.readline(), .04)
-    script.post('Ready to log in.')
+    script.gui.post('Ready to log in.')
 
 
 def autoAlch(client, string_var, lock) -> None:

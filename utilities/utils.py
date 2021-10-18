@@ -69,6 +69,7 @@ class WindMouse:
         self.wind = settings['wind']
         self.max_step = settings['maxStep']
         self.target_distance = settings['targetArea']
+        self.sleep_curve_points = [.01, .01, .025]  # This defines the curve distribution of the array
 
     @staticmethod
     def bernstein_poly(i, n, t):
@@ -79,27 +80,26 @@ class WindMouse:
         return comb(n, i) * (t ** (n - i)) * (1 - t) ** i
 
     def moveMouse(self, end_coords: tuple) -> None:
-
+        # Pyautogui settings. Currently set to instantaneous movement.
         pyautogui.MINIMUM_DURATION = 0
         pyautogui.FAILSAFE = False
         pyautogui.PAUSE = 0
+
         movement_path = []
         self.GeneratePoints(pyautogui.position(), end_coords, move_mouse=lambda x, y: movement_path.append([x, y]))
-        print(f"Number of point in path: {len(movement_path)}")
-        movement_delays = WindMouse.generate_mouse_movement_sleep_array(len(movement_path))
+        movement_delays = self.generate_mouse_movement_sleep_array(len(movement_path))
 
         for i in range(len(movement_path)):
             new_x, new_y = movement_path[i]
             pyautogui.moveTo(new_x, new_y)
             time.sleep(movement_delays[i])
 
-    @staticmethod
-    def generate_mouse_movement_sleep_array(number_of_points: int) -> [float]:
-        curve_points = [.01, .01, .03]  # This defines the curve distribution of the array
+    def generate_mouse_movement_sleep_array(self, number_of_points: int) -> [float]:
+
         t = np.linspace(0.0, 1.0, number_of_points)
         polynomial_array = np.array(
-            [WindMouse.bernstein_poly(i, len(curve_points) - 1, t) for i in range(0, len(curve_points))])
-        sleep_array = reversed(np.dot(np.array(curve_points), polynomial_array))
+            [WindMouse.bernstein_poly(i, len(self.sleep_curve_points) - 1, t) for i in range(0, len(self.sleep_curve_points))])
+        sleep_array = reversed(np.dot(np.array(self.sleep_curve_points), polynomial_array))
         sleep_array = [float(i) for i in sleep_array]
         return sleep_array
 
