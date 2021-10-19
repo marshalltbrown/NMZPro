@@ -8,7 +8,6 @@ class runelite:
         # Location vars
         self.client = Application().connect(path=r"C:\Users\Marshall\AppData\Local\RuneLite")['RuneLite']
         self.rectangle = self.client.rectangle()
-        self.offset: tuple = (self.rectangle.left, self.rectangle.top,)
 
         # Vars
         self.current_tab: Union[tab, None] = tab((0, 0,), (2, 2,))
@@ -20,7 +19,7 @@ class runelite:
 
         # Initializations & offsets
         self.inventory: [[inv_slot]] = self.init_inventory()
-        rectangle.offset = self.offset
+        rectangle.offset = (self.rectangle.left, self.rectangle.top,)
 
     @staticmethod
     def init_inventory() -> [[inv_slot]]:
@@ -40,19 +39,11 @@ class runelite:
         return items
 
     def update_location(self) -> None:
-        r = self.client.rectangle()
-        self.rectangle = r
-        top_left = (r.left, r.top,)
-        if top_left != self.offset:
-            bottom_right = (r.right, r.bottom,)
-            # Updates client.rectangle
-            self.rectangle = rectangle(top_left, bottom_right)
-            # Updates client.offset
-            self.offset = top_left
-            # Updates vars and data class
-            rectangle.offset = top_left
-
-            print('Updated client')
+        self.rectangle = self.client.rectangle()
+        offset = (self.rectangle.left, self.rectangle.top,)
+        # Updates vars and data class
+        rectangle.offset = offset
+        print('Updated client')
 
     def setFocus(self) -> None:
         if self.client.exists():
@@ -74,3 +65,4 @@ class rects:
     melee_prayer = rectangle((671, 360,), (694, 380,))
     existing_user = rectangle((399, 303,), (533, 334,))
     password_input = rectangle((346, 286,), (514, 298,))
+    hp_ocr_box = rectangle((524, 82,), (545, 95,))

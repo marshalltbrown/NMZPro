@@ -8,7 +8,7 @@ from PIL import Image
 from utilities.object_templates import tab
 from utilities.utils import pixelMatchesColor, itemCheck
 from utilities.vars import colors, coords
-from Runelite import tabs, runelite
+from Runelite import tabs, runelite, rects
 
 
 def reader(client, script):
@@ -69,44 +69,46 @@ def verifyOverload(client, img) -> bool:
     return result
 
 
-def readInventory(client, img):
-    if client.current_tab == tabs.inventory:
-        one_dose = coords.inv_slot1_1[1]
-        for row in range(7):
-            x = coords.inv_slot1_1[0]
-            for column in range(4):
-                colors.array = [
-                    img.getpixel((x, one_dose,)),
-                    img.getpixel((x, one_dose - 7,)),
-                    img.getpixel((x, one_dose - 10,)),
-                    img.getpixel((x, one_dose - 12,))
-                ]
-                if itemCheck(colors.array, colors.dwarven_rock, 10) == 4:
-                    update_pot_in_inv(client, row, column, '(*)')
-                elif (itemCheck(colors.array, colors.empty_potion, 8)) == 4:
-                    update_pot_in_inv(client, row, column, 'X')
-                elif (result := itemCheck(colors.array, colors.range_potion, 30)) != 0:
-                    update_pot_in_inv(client, row, column, "R", doses=result)
-                elif (result := itemCheck(colors.array, colors.absorption_pot, 15)) != 0:
-                    update_pot_in_inv(client, row, column, "A", doses=result)
-                elif (result := itemCheck(colors.array, colors.strength_pot, 15)) != 0:
-                    update_pot_in_inv(client, row, column, "S", doses=result)
-                elif (result := itemCheck(colors.array, colors.overload_pot, 10)) != 0:
-                    update_pot_in_inv(client, row, column, "O", doses=result)
-                elif (itemCheck(colors.array, colors.inv_empty, 15)) == 4:
-                    update_pot_in_inv(client, row, column, '-')
-                else:
-                    update_pot_in_inv(client, row, column, '?')
-                x += 42
-            one_dose += 36
+def readInventory(client, img) -> None:
+    if client.current_tab != tabs.inventory:
+        return
+
+    one_dose = coords.inv_slot1_1[1]
+    for row in range(7):
+        x = coords.inv_slot1_1[0]
+        for column in range(4):
+            colors.array = [
+                img.getpixel((x, one_dose,)),
+                img.getpixel((x, one_dose - 7,)),
+                img.getpixel((x, one_dose - 10,)),
+                img.getpixel((x, one_dose - 12,))
+            ]
+            if itemCheck(colors.array, colors.dwarven_rock, 10) == 4:
+                update_pot_in_inv(client, row, column, '(*)')
+            elif (itemCheck(colors.array, colors.empty_potion, 8)) == 4:
+                update_pot_in_inv(client, row, column, 'X')
+            elif (result := itemCheck(colors.array, colors.range_potion, 30)) != 0:
+                update_pot_in_inv(client, row, column, "R", doses=result)
+            elif (result := itemCheck(colors.array, colors.absorption_pot, 15)) != 0:
+                update_pot_in_inv(client, row, column, "A", doses=result)
+            elif (result := itemCheck(colors.array, colors.strength_pot, 15)) != 0:
+                update_pot_in_inv(client, row, column, "S", doses=result)
+            elif (result := itemCheck(colors.array, colors.overload_pot, 10)) != 0:
+                update_pot_in_inv(client, row, column, "O", doses=result)
+            elif (itemCheck(colors.array, colors.inv_empty, 15)) == 4:
+                update_pot_in_inv(client, row, column, '-')
+            else:
+                update_pot_in_inv(client, row, column, '?')
+            x += 42
+        one_dose += 36
 
 
-def update_pot_in_inv(client: runelite, row, column, contents, doses=0):
+def update_pot_in_inv(client: runelite, row, column, contents, doses=0) -> None:
     client.inventory[row][column].contents = contents
     client.inventory[row][column].pot_doses = doses
 
 
-def readTab(client, img):
+def readTab(client, img) -> None:
     item_tab_color = img.getpixel(coords.item_tab_check)
     prayer_tab_color = img.getpixel(coords.prayer_tab_check)
 
@@ -118,23 +120,21 @@ def readTab(client, img):
         client.current_tab = tab((0, 0,), (2, 2,))
 
 
-def readBuffPot(client, img):
+def readBuffPot(client, img) -> None:
     # Checks if buff is in double digits still
-    current_pixel = 123
     previous_color = 0
     green_lines = 0
-    while current_pixel <= 141:
+    for current_pixel in range(123, 142):
         current_color = img.getpixel((current_pixel, 346,))
         if pixelMatchesColor(current_color, colors.green, tolerance=5) \
                 and not pixelMatchesColor(previous_color, colors.green, tolerance=5):
             green_lines += 1
+
         previous_color = current_color
-        current_pixel += 1
+
     # TODO: some sort of method to limit false returns while client is moved.
     if green_lines == 2:
         client.buffed = True
-    elif green_lines == 1:
-        client.buffed = False
     else:
         client.buffed = False
 
@@ -151,7 +151,7 @@ def process_image(img, resize=False):
     return img
 
 
-def read_nmz_pot(client, ocr, pot_region):
+def read_nmz_pot(client, ocr, pot_region) -> None:
     # Get screenshot from region
     img = pyautogui.screenshot(region=pot_region)
     # Prep image for OCR
@@ -168,11 +168,10 @@ def read_nmz_pot(client, ocr, pot_region):
         client.inNMZ = False
 
 
-def readHealth(client, ocr):
-    left = 524 + client.rectangle.left
-    top = 82 + client.rectangle.top
+def readHealth(client, ocr) -> None:
+    rect = rects.hp_ocr_box
     # Params are ( left, top, width, height )
-    hp_region = (left, top, 21, 13,)
+    hp_region = (rect.left, rect.top, rect.width, rect.height,)
 
     # Thresholds to isolate health text in HSV color space
     low_thresh = (60, 160, 160)

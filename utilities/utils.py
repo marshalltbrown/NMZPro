@@ -71,6 +71,11 @@ class WindMouse:
         self.target_distance = settings['targetArea']
         self.sleep_curve_points = [.01, .01, .025]  # This defines the curve distribution of the array
 
+        # Pyautogui settings. Currently set to instantaneous movement.
+        pyautogui.MINIMUM_DURATION = 0
+        pyautogui.FAILSAFE = False
+        pyautogui.PAUSE = 0
+
     @staticmethod
     def bernstein_poly(i, n, t):
         """
@@ -79,11 +84,16 @@ class WindMouse:
 
         return comb(n, i) * (t ** (n - i)) * (1 - t) ** i
 
-    def moveMouse(self, end_coords: tuple) -> None:
-        # Pyautogui settings. Currently set to instantaneous movement.
-        pyautogui.MINIMUM_DURATION = 0
-        pyautogui.FAILSAFE = False
-        pyautogui.PAUSE = 0
+    @staticmethod
+    def click(post_delay: float = 0, right_click: bool = False):
+        if right_click:
+            pyautogui.rightClick()
+        else:
+            pyautogui.click()
+        if post_delay:
+            time.sleep(getSleepTRNV(post_delay))
+
+    def move(self, end_coords: tuple, post_delay: float = 0) -> None:
 
         movement_path = []
         self.GeneratePoints(pyautogui.position(), end_coords, move_mouse=lambda x, y: movement_path.append([x, y]))
@@ -93,6 +103,9 @@ class WindMouse:
             new_x, new_y = movement_path[i]
             pyautogui.moveTo(new_x, new_y, _pause=False)
             time.sleep(movement_delays[i])
+
+        if post_delay:
+            time.sleep(getSleepTRNV(post_delay))
 
     def generate_mouse_movement_sleep_array(self, number_of_points: int) -> [float]:
 

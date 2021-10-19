@@ -17,6 +17,8 @@ class rectangle:
         self.top_static: float = top_left[1]
         self.right_static: float = bottom_right[0]
         self.bottom_static: float = bottom_right[1]
+        self.width: float = self.right_static - self.left_static
+        self.height: float = self.bottom_static - self.top_static
 
     @property
     def left(self) -> int:
