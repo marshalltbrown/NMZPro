@@ -43,7 +43,6 @@ class runelite:
         offset = (self.rectangle.left, self.rectangle.top,)
         # Updates vars and data class
         rectangle.offset = offset
-        print('Updated client')
 
     def setFocus(self) -> None:
         if self.client.exists():

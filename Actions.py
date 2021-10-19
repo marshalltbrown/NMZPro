@@ -243,12 +243,12 @@ def eatRockCake(client, script, rock) -> None:
     # Move to tab
     moveToTab(client, script, tabs.inventory)
     # Move to rock cake
-    script.mouse.move(rock[0], post_delay=.1)
+    script.mouse.move(rock[0], post_delay=.15)
     # Right click to bring up guzzle menu
-    script.mouse.click(right_click=True, post_delay=.2)
+    script.mouse.click(right_click=True, post_delay=.35)
     # Move mouse down relative to current location to reach "Guzzle" menu option
     x, y = pyautogui.position()
-    script.mouse.move((get_random(x, x - 5, x + 5), get_random(y + 41, y + 36, y + 46),), post_delay=.2)
+    script.mouse.move((get_random(x, x - 5, x + 5), get_random(y + 41, y + 36, y + 46),), post_delay=.25)
     # Click to finish guzzling rock cake
     script.mouse.click(post_delay=.1)
 
