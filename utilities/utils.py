@@ -115,6 +115,7 @@ class WindMouse:
         start_x, start_y = starting_point
         current_x, current_y = start_x, start_y
         destination_x, destination_y = destination_point
+        max_step = self.max_step
         v_x = v_y = w_x = w_y = 0
         while (dist := np.hypot(destination_x - start_x, destination_y - start_y)) >= 1:
             w_mag = min(self.wind, dist)
@@ -124,15 +125,15 @@ class WindMouse:
             else:
                 w_x /= self.sqrt3
                 w_y /= self.sqrt3
-                if self.max_step < 3:
-                    self.max_step = np.random.random() * 3 + 3
+                if max_step < 3:
+                    max_step = np.random.random() * 3 + 3
                 else:
-                    self.max_step /= self.sqrt5
+                    max_step /= self.sqrt5
             v_x += w_x + self.gravity * (destination_x - start_x) / dist
             v_y += w_y + self.gravity * (destination_y - start_y) / dist
             v_mag = np.hypot(v_x, v_y)
-            if v_mag > self.max_step:
-                v_clip = self.max_step / 2 + np.random.random() * self.max_step / 2
+            if v_mag > max_step:
+                v_clip = max_step / 2 + np.random.random() * max_step / 2
                 v_x = (v_x / v_mag) * v_clip
                 v_y = (v_y / v_mag) * v_clip
             start_x += v_x
