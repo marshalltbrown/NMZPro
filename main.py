@@ -1,4 +1,4 @@
-#!python3.8
+
 
 import threading
 
@@ -25,12 +25,12 @@ def savePass():
     password = pass_entry.get()
     with open('assets/password.txt', 'w') as f:
         f.write(password)
-        string_vars['box'].insert('end', "New password saved.\n")
+        string_vars['box'].insert('end', "New password.txt saved.\n")
     pass_entry.delete(0, 'end')
     pass_entry.insert(0, readPassword())
 
 
-def readPassword():  # Reads password from the password.txt then copies it to the clipboard.
+def readPassword():  # Reads password.txt from the password.txt.txt then copies it to the clipboard.
     with open('assets/password.txt', 'r') as f:
         data = f.readline()
     password = 'No password saved'
@@ -42,7 +42,7 @@ def readPassword():  # Reads password from the password.txt then copies it to th
     return password
 
 
-def runLogin():  # Copies password from file and logs in to Runelite.
+def runLogin():  # Copies password.txt from file and logs in to Runelite.
     if client := get_client():
         with lock:
             string_vars['status'].set('Logging in')
@@ -68,6 +68,8 @@ def runNMZ():
             s_style = 'M'
         elif style == 'Overload':
             s_style = 'O'
+        elif style == 'Debug':
+            s_style = 'D'
         else:
             s_style = 'R'
 
@@ -78,8 +80,11 @@ def runNMZ():
 
         if s_style == 'O':
             threading.Thread(target=overload, args=(client, boss,), daemon=True).start()
+        elif s_style == 'D':
+            pass
         else:
             threading.Thread(target=NMZ, args=(client, boss,), daemon=True).start()
+
 
 # --GUI and main thread set-up.
 gui = Tk()
@@ -134,7 +139,7 @@ pass_entry.grid(row=0, column=1, pady=(10, 0), sticky='e')
 save_button = Button(button_frame, text='Save', width=7, command=lambda: savePass()).grid(row=0, column=2, padx=10, pady=(10, 0), sticky='e')
 options_var = StringVar()
 options_var.set('Ranging')
-option_menu = OptionMenu(button_frame, options_var, 'Ranging', 'Strength', 'Mage', 'Overload')
+option_menu = OptionMenu(button_frame, options_var, 'Ranging', 'Strength', 'Mage', 'Overload', 'Debug')
 option_menu.grid(row=2, column=2, sticky='w')
 
 # -Vertical separator
@@ -162,6 +167,6 @@ string_vars['box'].grid(row=4, column=0, columnspan=4, padx=(10, 0), pady=(20, 0
 string_vars['box'].insert('end', "Program initiated.\n")
 string_vars['box'].configure(state='normal')
 
-get_client()  # Checks if runelite is active
+get_client()  # Checks if RuneLite is active
 
 gui.mainloop()  # Accessible code above this point.

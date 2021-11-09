@@ -24,6 +24,7 @@ class colors():
     strength_pot = 186, 182, 182
     white = 255, 255, 255
     green = 0, 255, 0
+    magic_potion = 64, 126, 164
 
 
 settings = {

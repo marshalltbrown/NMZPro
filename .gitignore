@@ -141,3 +141,6 @@ dmypy.json
 /img/
 /assets/password.txt
 /run_py.bat
+/venv/
+/assets/password
+/NMZPro.bat

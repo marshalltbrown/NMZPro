@@ -13,6 +13,8 @@ Current support for absorption/rock-cake methods:
 
 • Minimum size only
 
+• Maximum OSRS brightness
+
 ![img.png](assets/window_settings.png)
 
 
@@ -24,6 +26,9 @@ Current support for absorption/rock-cake methods:
 ##Runelite overlay settings:
 
 ![img.png](assets/overlay_settings.png)
+
+##Brightness (required):
+![img.png](assets/brightness.png)
 
 ##General Window Setup: 
 

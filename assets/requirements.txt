@@ -1,0 +1,11 @@
+opencv-python
+pillow
+pynput
+numpy
+pyautogui
+pywinauto
+keyboard
+tk
+scipy
+torch
+easyocr

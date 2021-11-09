@@ -175,7 +175,7 @@ def nmz_check(client, script) -> bool:
                 script.end_time = time.time()
                 elapsed_time_string = time.strftime("%H:%M:%S", time.gmtime(script.end_time - script.start_time))
                 script.post(f"Total runtime: {elapsed_time_string}")
-                script.post("Logged out & aLl threads have been terminated.")
+                script.post("Logged out & all threads have been terminated.")
                 return False
             if timer == 2:
                 script.post('NMZ Not Found | Pausing script')
@@ -364,7 +364,7 @@ def login(client, script) -> None:  # Takes control of the mouse and keyboard to
     time.sleep(getSleepTRNV(.2))
     pyautogui.click()
     time.sleep(getSleepTRNV(.2))
-    script.post('Typing saved password.')
+    script.post('Typing saved password.txt.')
     with open('assets/password.txt', 'r') as reader:
         keyboard.write(reader.readline(), .04)
     script.post('Ready to log in.')

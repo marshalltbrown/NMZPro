@@ -81,20 +81,22 @@ def readInventory(client, inv_strings, img):
                     img.getpixel((x, one_dose - 10,)),
                     img.getpixel((x, one_dose - 12,))
                 ]
-                if itemCheck(colors.array, colors.dwarven_rock, 10) == 4:
+                if itemCheck(colors.array, colors.dwarven_rock, 20) == 4:
                     update_pot_in_inv(client, inv_strings, row, column, '(*)')
                 elif (itemCheck(colors.array, colors.empty_potion, 8)) == 4:
                     update_pot_in_inv(client, inv_strings, row, column, 'X')
                 elif (result := itemCheck(colors.array, colors.range_potion, 30)) != 0:
                     update_pot_in_inv(client, inv_strings, row, column, "R", dose=result)
-                elif (result := itemCheck(colors.array, colors.absorption_pot, 15)) != 0:
+                elif (result := itemCheck(colors.array, colors.absorption_pot, 23)) != 0:
                     update_pot_in_inv(client, inv_strings, row, column, "A", dose=result)
-                elif (result := itemCheck(colors.array, colors.strength_pot, 15)) != 0:
+                elif (result := itemCheck(colors.array, colors.strength_pot, 26)) != 0:
                     update_pot_in_inv(client, inv_strings, row, column, "S", dose=result)
                 elif (result := itemCheck(colors.array, colors.overload_pot, 10)) != 0:
                     update_pot_in_inv(client, inv_strings, row, column, "O", dose=result)
+                elif (result := itemCheck(colors.array, colors.magic_potion, 13)) != 0:
+                    update_pot_in_inv(client, inv_strings, row, column, "M", dose=result)
                 elif (itemCheck(colors.array, colors.inv_empty, 15)) == 4:
-                    update_pot_in_inv(client, inv_strings, row, column, '-')
+                    update_pot_in_inv(client, inv_strings, row, column, ' ')
                 else:
                     update_pot_in_inv(client, inv_strings, row, column, '?')
                 x += 42
