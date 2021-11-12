@@ -1,16 +1,22 @@
-
-
 import threading
-
 from tkinter import *
 from tkinter.ttk import Separator
 import tkinter.scrolledtext as st
 from typing import Optional
-
+from enum import Enum
 from Actions import login, NMZ, overload
 from Runelite import runelite
 from Controllers import admin
 from reader import reader
+
+
+class script_style(Enum):
+    Strength = 'S'
+    Range = 'R'
+    Mage = 'M'
+    Debug = 'D'
+    alch = 'alch'
+    Overload = 'O'
 
 
 def get_client() -> Optional[runelite]:
@@ -61,26 +67,22 @@ def runAlch():
 def runNMZ():
     if client := get_client():
         string_vars['status'].set('Loading...')
-        style = options_var.get()
-        if style == 'Strength':
-            s_style = 'S'
-        elif style == 'Mage':
-            s_style = 'M'
-        elif style == 'Overload':
-            s_style = 'O'
-        elif style == 'Debug':
-            s_style = 'D'
-        else:
-            s_style = 'R'
+        pulled_style = options_var.get()
+        selected_style = 'None'
+        for style in script_style:
+            if pulled_style in style.name:
+                selected_style = style.value
+                string_vars['box'].insert('end', f"Starting NMZ script.\nStyle: {style.name}\n")
 
-        string_vars['box'].insert('end', f"Starting NMZ script.\nStyle: {style}\n")
-        boss = admin(s_style, string_vars, lock, inventory_table)
+        print(selected_style)
+
+        boss = admin(selected_style, string_vars, lock, inventory_table)
 
         threading.Thread(target=reader, args=(client, boss,), daemon=True).start()
 
-        if s_style == 'O':
+        if selected_style == 'O':
             threading.Thread(target=overload, args=(client, boss,), daemon=True).start()
-        elif s_style == 'D':
+        elif selected_style == 'D':
             pass
         else:
             threading.Thread(target=NMZ, args=(client, boss,), daemon=True).start()
